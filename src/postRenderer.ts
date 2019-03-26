@@ -1,0 +1,3 @@
+class PostRenderer extends PageRenderer {
+  
+}
