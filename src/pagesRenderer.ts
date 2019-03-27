@@ -39,7 +39,9 @@ export class PagesRenderer {
       f => f.endsWith(".md") && f.length > 10
     );
     const nonMarkdownFiles = baseDirFileNames.filter(
-      f => !markdownFileNames.includes(f) && !fs.statSync(path.join(this.baseDirectory, f)).isDirectory()
+      f =>
+        !markdownFileNames.includes(f) &&
+        !fs.statSync(path.join(this.baseDirectory, f)).isDirectory()
     );
 
     if (!fs.existsSync(this.destinationDirectory)) {
@@ -92,8 +94,10 @@ export class PagesRenderer {
     const applyTemplate = this.initializeTemplate(
       `${this.baseDirectoryName}-index`
     );
+
+    const firstTenPages = pages.slice(0, 10);
     const indexHtml = applyTemplate(
-      Object.assign(this.templateData, { pages })
+      Object.assign(this.templateData, { pages: firstTenPages })
     );
     fs.writeFileSync(
       path.join(this.constants.distPath, "index.html"),

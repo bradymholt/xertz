@@ -7,6 +7,7 @@ export interface IPageAbstract {
   date: string;
   slug: string;
   title: string;
+  blurb: string;
 }
 
 export interface ITemplateDataSite {

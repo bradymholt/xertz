@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import marked from "marked";
+import * as cheerio from "cheerio";
 import * as handlebars from "handlebars";
 import { ITemplateData, IConstants, IPage, IPageAbstract } from "./interfaces";
 
@@ -32,15 +33,7 @@ export class PageRenderer {
 
   render() {
     const markdownContent = fs.readFileSync(this.file, { encoding: "utf-8" });
-    const h1Start = markdownContent.indexOf("#");
-    const h1End = markdownContent.indexOf("\n", h1Start);
-    const h1 = markdownContent.substring(
-      h1Start,
-      h1End >= 0 ? h1End : undefined
-    );
-    const pageTitle = h1.replace(/\s*\#\s*/g, "");
-    const markdownContentWithoutHeader = markdownContent.replace(h1, "");
-    const htmlFromMarkdown = marked(markdownContentWithoutHeader);
+    const htmlFromMarkdown = marked(markdownContent);
 
     let date = "";
     let slug = this.fileName;
@@ -52,6 +45,23 @@ export class PageRenderer {
       slug = fileNameMatcher[2];
     }
 
+    const $ = cheerio.load(htmlFromMarkdown, {
+      xmlMode: true
+    });
+
+    let pageTitle = slug;
+    const h1s = $("h1");
+    if (h1s.length > 0) {
+      const firstH1 = $("h1").first();
+      pageTitle = firstH1.text();
+
+      firstH1.remove();
+    }
+
+    const blurb = $("p").first().html();
+
+    const html = $.html();
+
     const pageAbstract = <IPageAbstract>{
       date,
       slug,
@@ -59,7 +69,8 @@ export class PageRenderer {
     };
 
     const page = Object.assign(pageAbstract, {
-      content: htmlFromMarkdown
+      content: html,
+      blurb
     });
 
     const pageDirectory = path.join(this.destinationDirectory, page.slug);

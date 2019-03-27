@@ -15,9 +15,9 @@
           <h2>
             <a class="post-link" href="/{{ this.slug }}">{{this.title}}</a>
           </h2>
-          <p>[TODO: Abstract]</p>
+          <p>{{{ this.blurb }}}</p>
         </li>
-      {{/each}}
+        {{/each}}
       </ul>
     </div>
   </div>
@@ -25,4 +25,5 @@
     {{> footer }}
   </div>
 </body>
+
 </html>

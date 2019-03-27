@@ -10,10 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/cheerio": "^0.22.11",
     "@types/fs-extra": "^5.0.5",
     "@types/marked": "^0.6.1",
     "@types/node": "^11.10.4",
     "@types/node-sass": "^4.11.0",
+    "cheerio": "^1.0.0-rc.2",
     "fs-extra": "^7.0.1",
     "handlebars": "^4.1.0",
     "marked": "^0.6.1",
