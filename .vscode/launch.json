@@ -7,6 +7,13 @@
       "request": "launch",
       "runtimeArgs": ["-r", "ts-node/register"],
       "args": ["${workspaceRoot}/src/index.ts"]
+    },
+    {
+      "name": "test",
+      "type": "node",
+      "request": "launch",      
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": ["${relativeFile}"]      
     }
   ]
 }

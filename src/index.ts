@@ -11,7 +11,7 @@ import {
 } from "./interfaces";
 import { PagesRenderer } from "./pagesRenderer";
 
-class Blogen {
+export class Amplog {
   readonly constants: IConstants;
 
   constructor() {
@@ -79,4 +79,4 @@ class Blogen {
   }
 }
 
-new Blogen().start();
+new Amplog().start();
