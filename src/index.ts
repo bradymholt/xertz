@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as handlebars from "handlebars";
-import marked from "marked";
 import * as sass from "node-sass";
 import {
   ITemplateData,
@@ -14,11 +13,11 @@ import { PagesRenderer } from "./pagesRenderer";
 export class Amplog {
   readonly constants: IConstants;
 
-  constructor() {
+  constructor(baseDirectory: string = __dirname) {
     this.constants = {
-      distPath: path.join(__dirname, "../dist"),
+      distPath: path.join(baseDirectory, "dist"),
       templatePath: path.join(__dirname, "../template"),
-      contentPath: path.join(__dirname, "../content"),
+      contentPath: path.join(baseDirectory, "content"),
       postsDirectoryName: "posts"
     };
   }
@@ -76,7 +75,9 @@ export class Amplog {
       templateData
     );
     pagesRenderer.render();
+
+    // robots.txt
+    // feed.xml
+    // sitemap.xml
   }
 }
-
-new Amplog().start();

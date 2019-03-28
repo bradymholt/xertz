@@ -1,6 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
-import marked from "marked";
+import marked = require("marked");
 import * as cheerio from "cheerio";
 import * as handlebars from "handlebars";
 import { ITemplateData, IConstants, IPage, IPageAbstract } from "./interfaces";
