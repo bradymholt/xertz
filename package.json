@@ -1,19 +1,20 @@
 {
   "name": "amplog",
   "version": "1.0.0",
-  "description": "",
+  "description": "amplog",
   "main": "index.js",
-  "bin": "bin/cli.js",
+  "bin": "bin/start.js",
   "scripts": {
-    "start": "./bin/cli.js",
+    "start": "./bin/start.js build ./test/site",
     "test": "jest"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Brady Holt",
+  "license": "MIT",
   "dependencies": {
     "@types/cheerio": "^0.22.11",
     "@types/express": "^4.16.1",
     "@types/fs-extra": "^5.0.5",
+    "@types/js-yaml": "^3.12.0",
     "@types/marked": "^0.6.1",
     "@types/node": "^11.10.4",
     "@types/node-sass": "^4.11.0",
@@ -21,8 +22,9 @@
     "express": "^4.16.4",
     "fs-extra": "^7.0.1",
     "handlebars": "^4.1.0",
+    "js-yaml": "^3.13.0",
     "marked": "^0.6.1",
-    "node-sass": "^4./bin.11.0",
+    "node-sass": "^4.11.0",
     "ts-node": "^8.0.2"
   },
   "devDependencies": {

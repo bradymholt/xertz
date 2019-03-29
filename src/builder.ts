@@ -3,35 +3,60 @@ import * as fse from "fs-extra";
 import * as path from "path";
 import * as handlebars from "handlebars";
 import * as sass from "node-sass";
-import {
-  ITemplateData,
-  ITemplateDataSite,
-  IConstants  
-} from "./interfaces";
+import * as interfaces from "./interfaces";
+import * as yaml from "js-yaml";
 import { PagesRenderer } from "./pagesRenderer";
+import { getCurrentDateInISOFormat } from "./dateHelper";
 
-export class Amplog {
-  readonly constants: IConstants;
+export class Builder {
+  readonly baseDirectory: string;
+  readonly constants: interfaces.IConstants;
 
-  constructor(baseDirectory: string = __dirname) {
+  constructor(baseDirectory: string) {
+    this.baseDirectory = baseDirectory;
+
     this.constants = {
-      distPath: path.join(baseDirectory, "dist"),
-      templatePath: path.join(__dirname, "../template"),
       contentPath: path.join(baseDirectory, "content"),
+      distDirectory: path.join(baseDirectory, "dist"),
+      templatePath: path.join(__dirname, "../template"),
+
       postsDirectoryName: "posts"
     };
   }
 
+  start() {
+    this.registerTemplatePartials();
+    fse.emptyDirSync(this.constants.distDirectory);
+
+    const templateData = this.getTemplateData();
+    const pagesRenderer = new PagesRenderer(
+      this.constants,
+      this.constants.contentPath,
+      templateData
+    );
+    pagesRenderer.render();
+
+    // robots.txt
+    // feed.xml
+    // sitemap.xml
+  }
+
   private getTemplateData() {
-    const site: ITemplateDataSite = {
-      name: "Foo",
-      description: "FooDescription",
-      baseurl: "FooBaseUrl",
-      buildTime: "2019-XX-XX"
+    const configFileContent = fs.readFileSync(
+      path.join(this.baseDirectory, "_config.yml"),
+      "utf-8"
+    );
+    const config = yaml.safeLoad(configFileContent) as interfaces.IConfig;
+
+    const site: interfaces.ITemplateDataSite = {
+      name: config.title,
+      description: config.description,
+      baseurl: "/",
+      buildTime: getCurrentDateInISOFormat()
     };
 
     const styles = this.getStyles();
-    const templateData = <ITemplateData>{
+    const templateData = <interfaces.ITemplateData>{
       site,
       template: { styles }
     };
@@ -61,23 +86,5 @@ export class Amplog {
       const templateName = fileName.match(/_(.*).html/)![1];
       handlebars.registerPartial(templateName, applyTemplate);
     }
-  }
-
-  start() {
-    fse.emptyDirSync(this.constants.distPath);
-
-    this.registerTemplatePartials();
-
-    const templateData = this.getTemplateData();
-    const pagesRenderer = new PagesRenderer(
-      this.constants,
-      this.constants.contentPath,
-      templateData
-    );
-    pagesRenderer.render();
-
-    // robots.txt
-    // feed.xml
-    // sitemap.xml
   }
 }

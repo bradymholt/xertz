@@ -10,6 +10,10 @@ export interface IPageAbstract {
   blurb: string;
 }
 
+export interface IConfig {
+  title: string,
+  description: string;
+}
 export interface ITemplateDataSite {
   name: string;
   description: string;
@@ -23,7 +27,7 @@ export interface ITemplateData {
 }
 
 export interface IConstants{  
-  distPath: string;
+  distDirectory: string;
   templatePath: string;
   contentPath: string;
   postsDirectoryName: string;

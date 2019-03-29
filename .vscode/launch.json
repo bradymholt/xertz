@@ -6,7 +6,7 @@
       "type": "node",
       "request": "launch",
       "runtimeArgs": ["-r", "ts-node/register"],
-      "args": ["${workspaceRoot}/src/index.ts"]
+      "args": ["${workspaceRoot}/bin/amplog.js"]
     },
     {
       "name": "test",

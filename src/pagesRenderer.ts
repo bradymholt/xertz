@@ -24,10 +24,10 @@ export class PagesRenderer {
     this.templateData = templateData;
 
     if (constants.postsDirectoryName == this.baseDirectoryName) {
-      this.destinationDirectory = this.constants.distPath;
+      this.destinationDirectory = this.constants.distDirectory;
     } else {
       this.destinationDirectory = path.join(
-        this.constants.distPath,
+        this.constants.distDirectory,
         baseDirectory.replace(this.constants.contentPath, "")
       );
     }
@@ -97,10 +97,16 @@ export class PagesRenderer {
 
     const firstTenPages = pages.slice(0, 10);
     const indexHtml = applyTemplate(
-      Object.assign(this.templateData, { pages: firstTenPages })
+      Object.assign(this.templateData, {
+        page: {
+          title: this.templateData.site.name
+        } as IPageAbstract,
+        pages: firstTenPages
+      })
     );
+    
     fs.writeFileSync(
-      path.join(this.constants.distPath, "index.html"),
+      path.join(this.constants.distDirectory, "index.html"),
       indexHtml
     );
   }

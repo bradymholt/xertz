@@ -1,7 +1,7 @@
-import { Amplog } from "../src/index";
+import { Builder } from "../src/builder";
 
 describe('index', function() {
   it('instantiates', function() {
-    expect(new Amplog().constants.distPath).toBeTruthy();
+    expect(new Builder().constants.distDirectory).toBeTruthy();
   })
 });
