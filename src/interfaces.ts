@@ -10,25 +10,28 @@ export interface IPageAbstract {
   blurb: string;
 }
 
-export interface IConfig {
-  title: string,
-  description: string;
-}
-export interface ITemplateDataSite {
+export interface IStyle {
   name: string;
+  content: string;
+  url: string;
+}
+
+export interface IConfig {
+  title: string;
   description: string;
-  baseurl: string;
-  buildTime: string;
+  url: string;
 }
 
 export interface ITemplateData {
-  site: ITemplateDataSite
-  template: { [partialName: string]: string };  
+  config: IConfig,
+  buildDate: string;
+  template?: {
+    assets: { [partialName: string]: IStyle };
+  };
 }
 
-export interface IConstants{  
+export interface IConstants {
   distDirectory: string;
   templatePath: string;
-  contentPath: string;
-  postsDirectoryName: string;
+  contentPath: string  
 }

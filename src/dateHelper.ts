@@ -1,7 +1,6 @@
-export function getCurrentDateInISOFormat() {
-  let currentDate = new Date();
+export function getCurrentDateInISOFormat(currentDate = new Date()) {
   let isoLocalDateString = new Date(
     currentDate.getTime() - currentDate.getTimezoneOffset() * 60000
   ).toISOString();
-  return isoLocalDateString;
+  return isoLocalDateString.substring(0,10);
 }

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+{{> head }}
+<body>
+  {{> header }}
+  <div class="page-content">
+    <div class="wrapper">
+      {{> sidebar }}
+      <div class="home">
+      <h1>Latest Posts</h1>
+      <ul class="post-list">
+        {{#each pages}}
+        <li>
+          <span class="post-meta">{{ this.date }}</span>
+          <h2>
+            <a class="post-link" href="/{{ this.slug }}">{{this.title}}</a>
+          </h2>
+          <p>{{{ this.blurb }}}</p>
+          <a href="/{{ this.slug }}">Read More</a>
+        </li>
+      {{/each}}
+      </ul>
+    </div>
+  </div>
+</body>
+</html>

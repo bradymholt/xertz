@@ -2,89 +2,103 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as handlebars from "handlebars";
-import * as sass from "node-sass";
 import * as interfaces from "./interfaces";
 import * as yaml from "js-yaml";
-import { PagesRenderer } from "./pagesRenderer";
+import { ContentRenderer } from "./contentRenderer";
 import { getCurrentDateInISOFormat } from "./dateHelper";
+import { IStyle } from "./interfaces";
+import registerHbsHelpers from "./hbs-helpers"
 
 export class Builder {
   readonly baseDirectory: string;
   readonly constants: interfaces.IConstants;
+  
 
   constructor(baseDirectory: string) {
     this.baseDirectory = baseDirectory;
 
     this.constants = {
       contentPath: path.join(baseDirectory, "content"),
-      distDirectory: path.join(baseDirectory, "dist"),
-      templatePath: path.join(__dirname, "../template"),
-
-      postsDirectoryName: "posts"
+      templatePath: path.join(baseDirectory, "template"),
+      distDirectory: path.join(baseDirectory, "dist")
     };
   }
 
   start() {
-    this.registerTemplatePartials();
     fse.emptyDirSync(this.constants.distDirectory);
 
-    const templateData = this.getTemplateData();
-    const pagesRenderer = new PagesRenderer(
-      this.constants,
+    this.registerTemplatePartials();
+    registerHbsHelpers();
+
+    const config = this.loadConfig();
+    const templateData = this.getTemplateData(config);
+
+    const contentRenderer = new ContentRenderer(
       this.constants.contentPath,
+      this.constants.distDirectory,
+      this.constants,      
       templateData
     );
-    pagesRenderer.render();
-
-    // robots.txt
-    // feed.xml
-    // sitemap.xml
+    contentRenderer.render();
   }
 
-  private getTemplateData() {
+  private loadConfig() {
     const configFileContent = fs.readFileSync(
       path.join(this.baseDirectory, "_config.yml"),
       "utf-8"
     );
     const config = yaml.safeLoad(configFileContent) as interfaces.IConfig;
+    return config;
+  }
 
-    const site: interfaces.ITemplateDataSite = {
-      name: config.title,
-      description: config.description,
-      baseurl: "/",
-      buildTime: getCurrentDateInISOFormat()
-    };
+  private getTemplateData(config: interfaces.IConfig) {
+    // Render styles and group by name
+    const styles = this.renderAssets(config);
+    const assets: {
+      [partialName: string]: IStyle;
+    } = styles.reduce(
+      (root: { [partialName: string]: IStyle }, current: IStyle) => {
+        root[current.name] = current;
+        return root;
+      },
+      {} as { [partialName: string]: IStyle }
+    );
 
-    const styles = this.getStyles();
     const templateData = <interfaces.ITemplateData>{
-      site,
-      template: { styles }
+      config,
+      buildDate: getCurrentDateInISOFormat(),
+      template: { assets }
     };
 
     return templateData;
   }
 
-  private getStyles() {
-    const sassResult = sass.renderSync({
-      file: path.join(this.constants.templatePath, "styles.scss"),
-      outputStyle: "compressed"
-    });
-    return sassResult.css.toString();
+  private renderAssets(config: interfaces.IConfig) {
+    const contentRenderer = new ContentRenderer(
+      path.join(this.constants.templatePath, "assets"),
+      path.join(this.constants.distDirectory, "assets"),
+      this.constants,
+      { config, buildDate: getCurrentDateInISOFormat() }
+    );
+    contentRenderer.render();
+    return contentRenderer.renderedStyles;
   }
 
   private registerTemplatePartials() {
+    const layoutsDirectory = path.join(this.constants.templatePath, "layouts");
+    // TODO: support partials in subdirectories
     const templatePartialsFiles = fs
-      .readdirSync(this.constants.templatePath)
-      .filter(f => f.startsWith("_") && f.endsWith(".html"));
+      .readdirSync(layoutsDirectory)
+      .filter(f => f.startsWith("_") && f.endsWith(".hbs"));
+
     for (let fileName of templatePartialsFiles) {
       const templateContent = fs.readFileSync(
-        path.join(this.constants.templatePath, fileName),
+        path.join(layoutsDirectory, fileName),
         { encoding: "utf-8" }
       );
 
-      const applyTemplate = handlebars.compile(templateContent);
-      const templateName = fileName.match(/_(.*).html/)![1];
-      handlebars.registerPartial(templateName, applyTemplate);
+      const templateName = path.parse(fileName).name.substr(1);
+      handlebars.registerPartial(templateName, templateContent); 
     }
   }
 }

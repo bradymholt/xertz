@@ -3,70 +3,111 @@ import * as path from "path";
 import * as fse from "fs-extra";
 import express = require("express");
 import * as pkg from "../package.json";
+import { getCurrentDateInISOFormat } from "./dateHelper";
 
-export function run(cwd: string, args: Array<string>) {
-  console.log(`${pkg.name} - Version: ${pkg.version}`);
-
-  watchSignal();
-
-  const command = args[0] || "build";
-
-  switch (command) {
-    case "init":
-      init(cwd, args[1]);
-      break;
-    case "build":
-      build(cwd, args[1] || ".");
-      break;
-    case "serve":
-      serve(cwd, args[1]);
-      break;
-    default:
-      printHelp();
-  }
+export function init(cwd: string, args: Array<string>) {
+  const c = new cli(cwd, args);
+  return c;
 }
 
-function watchSignal() {
-  process.on("SIGINT", function() {
+class cli {
+  readonly scaffoldDirectoryName = "scaffold";
+  readonly scaffoldContentExampleFileName = "YYYY-MM-DD-my-first-post.md";
+
+  cwd: string;
+  args: Array<string>;
+
+  constructor(
+    cwd: string,
+    args: Array<string>,
+    logger: (text: string) => void = console.log
+  ) {
+    this.cwd = cwd;
+    this.args = args;
+  }
+
+  run() {
+    console.log(`${pkg.name} - Version: ${pkg.version}`);
+
+    this.watchSignal();
+
+    const command = this.args[0] || "build";
+
+    switch (command) {
+      case "init":
+        this.init(this.args[1]);
+        break;
+      case "build":
+        this.build(this.args[1] || ".");
+        break;
+      case "serve":
+        this.serve(this.args[1]);
+        break;
+      default:
+        this.printHelp();
+    }
+  }
+
+  watchSignal() {
+    process.on("SIGINT", function() {
+      process.exit();
+    });
+  }
+
+  init(targetDirectoryName: string) {
+    if (!targetDirectoryName) {
+      this.exitWithError("ERROR: target directory is required!");
+      return;
+    }
+
+    const targetDirectoryPath = path.resolve(this.cwd, targetDirectoryName);
+
+    if (fse.pathExistsSync(targetDirectoryPath)) {
+      this.exitWithError(`ERROR: ${targetDirectoryPath} already exists.`);
+      return;
+    }
+
+    const scaffoldDirectory = path.resolve(
+      __dirname,
+      "../",
+      this.scaffoldDirectoryName
+    );
+    fse.copySync(scaffoldDirectory, targetDirectoryPath);
+
+    // Add today's date in the example content file
+    fse.renameSync(
+      path.join(targetDirectoryPath, this.scaffoldContentExampleFileName),
+      path.join(
+        targetDirectoryPath,
+        this.scaffoldContentExampleFileName.replace(
+          "YYYY-MM-DD",
+          getCurrentDateInISOFormat()
+        )
+      )
+    );
+
+    console.log(`Done!  Start blogging with ${pkg.name}.`);
     process.exit();
-  });
-}
-
-function init(cwd: string, targetDirectoryName: string) {
-  if (!targetDirectoryName) {
-    exitWithError("ERROR: target directory is required!");
   }
 
-  const targetDirectoryPath = path.resolve(cwd, targetDirectoryName);
-
-  if (fse.pathExistsSync(targetDirectoryPath)) {
-    exitWithError(`ERROR: ${targetDirectoryPath} already exists.`);
+  build(sourceDirectory: string) {
+    new Builder(path.join(this.cwd, sourceDirectory)).start();
+    console.log(`Success!`);
+    process.exit();
   }
 
-  const scaffoldDirectory = path.resolve(__dirname, "../scaffold");
-  fse.copySync(scaffoldDirectory, targetDirectoryPath);
+  serve(preferredPortNumber: string) {
+    this.build(".");
 
-  console.log(`Done!  Start blogging with ${pkg.name}.`);
-  process.exit();
-}
-function build(cwd: string, sourceDirectory: string) {
-  new Builder(path.join(cwd, sourceDirectory)).start();
-  console.log(`Success!`);
-  process.exit();
-}
+    const expressApp = express();
+    expressApp.use(express.static(path.join(this.cwd, "dist")));
+    const portNumber = Number(preferredPortNumber) || 8080;
+    expressApp.listen(portNumber);
 
-function serve(cwd: string, preferredPortNumber: string) {
-  build(cwd, ".");
-
-  const expressApp = express();
-  expressApp.use(express.static(path.join(cwd, "dist")));
-  const portNumber = Number(preferredPortNumber) || 8080;
-  expressApp.listen(portNumber);
-
-  console.log(`Listening on http://localhost:${portNumber}`);
-}
-function printHelp() {
-  console.log(`\
+    console.log(`Listening on http://localhost:${portNumber}`);
+  }
+  printHelp() {
+    console.log(`\
 ${pkg.name}
 ${pkg.description}
 Version: ${pkg.version}
@@ -78,9 +119,10 @@ Version: ${pkg.version}
     serve
     help
 `);
-}
+  }
 
-function exitWithError(errorMessage: string) {
-  console.error(errorMessage);
-  process.exit(1);
+  exitWithError(errorMessage: string) {
+    console.error(errorMessage);
+    process.exit(1);
+  }
 }
