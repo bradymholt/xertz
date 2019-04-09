@@ -1,37 +1,35 @@
-export interface IPage extends IPageAbstract {
-  content?: string;
-  data?: any;
-}
-
-export interface IPageAbstract {
-  date: string;
-  slug: string;
+export interface IPage {
+  date?: string;
+  slug?: string;
   title: string;
-  blurb: string;
+  description: string;
 }
 
 export interface IStyle {
   name: string;
   content: string;
-  url: string;
 }
 
 export interface IConfig {
   title: string;
   description: string;
   url: string;
+  outPath?: string;
 }
 
 export interface ITemplateData {
-  config: IConfig,
+  config: IConfig;
   buildDate: string;
   template?: {
     assets: { [partialName: string]: IStyle };
   };
+  content?: string;
+  page?: IPage;
+  pages?: Array<IPage>;
+  
 }
 
 export interface IConstants {
   distDirectory: string;
-  templatePath: string;
-  contentPath: string  
+  contentPath: string;
 }

@@ -1,104 +1,54 @@
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
-import * as handlebars from "handlebars";
 import * as interfaces from "./interfaces";
-import * as yaml from "js-yaml";
-import { ContentRenderer } from "./contentRenderer";
-import { getCurrentDateInISOFormat } from "./dateHelper";
-import { IStyle } from "./interfaces";
-import registerHbsHelpers from "./hbs-helpers"
+import { IStyle, IContent } from "./interfaces";
+import { StylesGenerator } from "./generators/stylesGenerator";
+import { AssetGenerator } from "./generators/assetGenerator";
+import { ContentGenerator } from "./generators/contentGenerator";
+import { loadConfigFile } from "./configHelper";
 
 export class Builder {
   readonly baseDirectory: string;
   readonly constants: interfaces.IConstants;
-  
 
   constructor(baseDirectory: string) {
     this.baseDirectory = baseDirectory;
 
     this.constants = {
-      contentPath: path.join(baseDirectory, "content"),
-      templatePath: path.join(baseDirectory, "template"),
+      contentPath: baseDirectory,
       distDirectory: path.join(baseDirectory, "dist")
     };
   }
 
   start() {
     fse.emptyDirSync(this.constants.distDirectory);
-
-    this.registerTemplatePartials();
-    registerHbsHelpers();
-
-    const config = this.loadConfig();
-    const templateData = this.getTemplateData(config);
-
-    const contentRenderer = new ContentRenderer(
-      this.constants.contentPath,
-      this.constants.distDirectory,
-      this.constants,      
-      templateData
-    );
-    contentRenderer.render();
-  }
-
-  private loadConfig() {
-    const configFileContent = fs.readFileSync(
-      path.join(this.baseDirectory, "_config.yml"),
-      "utf-8"
-    );
-    const config = yaml.safeLoad(configFileContent) as interfaces.IConfig;
-    return config;
-  }
-
-  private getTemplateData(config: interfaces.IConfig) {
-    // Render styles and group by name
-    const styles = this.renderAssets(config);
-    const assets: {
-      [partialName: string]: IStyle;
-    } = styles.reduce(
-      (root: { [partialName: string]: IStyle }, current: IStyle) => {
-        root[current.name] = current;
-        return root;
-      },
-      {} as { [partialName: string]: IStyle }
-    );
-
-    const templateData = <interfaces.ITemplateData>{
-      config,
-      buildDate: getCurrentDateInISOFormat(),
-      template: { assets }
-    };
-
-    return templateData;
-  }
-
-  private renderAssets(config: interfaces.IConfig) {
-    const contentRenderer = new ContentRenderer(
-      path.join(this.constants.templatePath, "assets"),
-      path.join(this.constants.distDirectory, "assets"),
-      this.constants,
-      { config, buildDate: getCurrentDateInISOFormat() }
-    );
-    contentRenderer.render();
-    return contentRenderer.renderedStyles;
-  }
-
-  private registerTemplatePartials() {
-    const layoutsDirectory = path.join(this.constants.templatePath, "layouts");
-    // TODO: support partials in subdirectories
-    const templatePartialsFiles = fs
-      .readdirSync(layoutsDirectory)
-      .filter(f => f.startsWith("_") && f.endsWith(".hbs"));
-
-    for (let fileName of templatePartialsFiles) {
-      const templateContent = fs.readFileSync(
-        path.join(layoutsDirectory, fileName),
-        { encoding: "utf-8" }
-      );
-
-      const templateName = path.parse(fileName).name.substr(1);
-      handlebars.registerPartial(templateName, templateContent); 
+    let baseConfig = loadConfigFile(this.constants.contentPath);
+    if (!baseConfig) {
+      throw Error("Config file not found.");
     }
+
+    // Assets
+    new AssetGenerator().render(
+      path.join(this.constants.contentPath, "content"),
+      path.join(this.constants.distDirectory)
+    );
+
+    // Styles
+    const styles: Array<IStyle> = new StylesGenerator().render(
+      path.join(this.constants.contentPath, "styles"),
+      path.join(this.constants.distDirectory, "styles")
+    );
+
+    // Content
+    const contentRenderer = new ContentGenerator(
+      baseConfig,
+      styles,
+      path.join(this.constants.contentPath, "layouts")
+    );
+    const contents = contentRenderer.render(
+      path.join(this.constants.contentPath, "content"),
+      path.join(this.constants.distDirectory)
+    );
   }
 }

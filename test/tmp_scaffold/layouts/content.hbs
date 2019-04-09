@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {{> head }}
+
 <body>
   {{> header }}
   <div class="page-content">
@@ -10,7 +11,10 @@
         <header class="post-header">
           <h1 class="post-title">
             {{ page.title }}
-          </h1>          
+          </h1>
+          <h2>
+            {{ page.date }}
+          </h2>
         </header>
         <article class="post-content">
           {{{ page.content }}}
@@ -22,4 +26,5 @@
     {{> footer }}
   </div>
 </body>
+
 </html>
