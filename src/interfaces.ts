@@ -1,6 +1,7 @@
 export interface IPage {
   date?: string;
   slug?: string;
+  amp_slug?: string;
   title: string;
   description: string;
 }

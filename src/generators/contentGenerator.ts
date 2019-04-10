@@ -1,9 +1,9 @@
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
-import * as yaml from "js-yaml";
 import * as handlebars from "handlebars";
 import marked = require("marked");
+import ampify = require("ampify");
 import * as cheerio from "cheerio";
 import registerHbsHelpers from "../hbs-helpers";
 import { IPage, IConfig, IStyle, ITemplateData } from "../interfaces";
@@ -15,6 +15,7 @@ export class ContentGenerator {
   readonly layoutsDirectory: string;
   readonly styles: Array<IStyle>;
   initialized = false;
+  baseSourceDirectory: string | null = null;
 
   constructor(
     baseConfig: IConfig,
@@ -26,17 +27,18 @@ export class ContentGenerator {
     this.layoutsDirectory = layoutsDirectory;
   }
 
-  protected initialize() {
+  protected initialize(sourceDirectory: string) {
     if (!this.initialized) {
       this.registerTemplatePartials(this.layoutsDirectory);
       registerHbsHelpers();
+      this.baseSourceDirectory = sourceDirectory;
 
       this.initialized = true;
     }
   }
 
   public render(sourceDirectory: string, destDirectory: string) {
-    this.initialize();
+    this.initialize(sourceDirectory);
 
     let config = this.baseConfig;
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
@@ -51,6 +53,10 @@ export class ContentGenerator {
     // TODO: Make this configurable
     const applyTemplate = this.initializeTemplate(
       path.join(this.layoutsDirectory, "content.hbs")
+    );
+
+    const ampApplyTemplate = this.initializeTemplate(
+      path.join(this.layoutsDirectory, "amp.hbs")
     );
 
     const pages: Array<IPage> = [];
@@ -72,6 +78,7 @@ export class ContentGenerator {
         destDirectory,
         currentFileName,
         applyTemplate,
+        ampApplyTemplate,
         templateData,
         config
       );
@@ -150,7 +157,7 @@ export class ContentGenerator {
 
     // TODO: don't hardcode .hbs extension
     // TODO: config outPath is ignored for template files...I think this is ok but need to make obvious
-    const name = currentFileName.replace(".hbs", ".html");
+    const name = currentFileName.replace(".hbs", "");
     fs.writeFileSync(path.join(destDirectory, name), templatedOutput);
   }
 
@@ -159,6 +166,7 @@ export class ContentGenerator {
     destDirectory: string,
     currentFileName: string,
     applyTemplate: handlebars.TemplateDelegate<any>,
+    ampApplyTemplate: handlebars.TemplateDelegate<any>,
     templateData: ITemplateData,
     config: IConfig
   ) {
@@ -208,7 +216,45 @@ export class ContentGenerator {
     fse.emptyDirSync(pageDirectory);
     fs.writeFileSync(path.join(pageDirectory, "index.html"), templatedOutput);
 
+    this.renderAmpContentFile(
+      page,
+      html,
+      pageDirectory,
+      sourceDirectory,
+      destDirectory,
+      currentFileName,
+      ampApplyTemplate,
+      templateData,
+      config
+    );
+
     return page;
+  }
+
+  private async renderAmpContentFile(
+    page: IPage,
+    html: string,
+    pageDirectory: string,
+    sourceDirectory: string,
+    destDirectory: string,
+    currentFileName: string,
+    applyTemplate: handlebars.TemplateDelegate<any>,
+    templateData: ITemplateData,
+    config: IConfig
+  ) {
+    if (!this.baseSourceDirectory) {
+      throw new Error("baseSourceDirectory not set");
+    }
+
+    const ampHtml = await ampify(html, {
+      cwd: this.baseSourceDirectory.replace(/\/$/, "")
+    });
+
+    const templatedOutput = applyTemplate(<ITemplateData>(
+      Object.assign({}, templateData, { page }, { content: ampHtml })
+    ));
+
+    fs.writeFileSync(path.join(pageDirectory, "amp.html"), templatedOutput);
   }
 
   private registerTemplatePartials(layoutsDirectory: string) {
