@@ -2,3 +2,5 @@
 title: My Blog
 description: This is my blog where I write about things I enjoy
 url: https://www.my-awesome-blog.com
+redirects:
+  /2018/01/21/10-test-redirect.html: /test-redirect/

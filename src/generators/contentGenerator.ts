@@ -55,13 +55,18 @@ export class ContentGenerator {
 
     const pages: Array<IPage> = [];
     const baseDirFileNames = fs.readdirSync(sourceDirectory);
-    const contentFileNames = baseDirFileNames.filter(
-      f =>
-        !f.startsWith("_") &&
-        !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
-        ["md"].includes(path.extname(f).substr(1))
-    );
-    for (let currentFileName of contentFileNames) {
+    const sortedContentFileNames = baseDirFileNames
+      .filter(
+        f =>
+          !f.startsWith("_") &&
+          !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
+          ["md"].includes(path.extname(f).substr(1))
+      )
+      .sort((first: string, second: string) => {
+        return first.localeCompare(second, "en", { numeric: true });
+      });
+
+    for (let currentFileName of sortedContentFileNames) {
       const pageContent = this.renderContentFile(
         sourceDirectory,
         destDirectory,

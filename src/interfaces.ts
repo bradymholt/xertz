@@ -15,6 +15,7 @@ export interface IConfig {
   description: string;
   url: string;
   outPath?: string;
+  redirects: { [source: string]: string };
 }
 
 export interface ITemplateData {
@@ -26,7 +27,6 @@ export interface ITemplateData {
   content?: string;
   page?: IPage;
   pages?: Array<IPage>;
-  
 }
 
 export interface IConstants {

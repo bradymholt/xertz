@@ -2,11 +2,12 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as interfaces from "./interfaces";
-import { IStyle, IContent } from "./interfaces";
+import { IStyle } from "./interfaces";
 import { StylesGenerator } from "./generators/stylesGenerator";
 import { AssetGenerator } from "./generators/assetGenerator";
 import { ContentGenerator } from "./generators/contentGenerator";
 import { loadConfigFile } from "./configHelper";
+import { RedirectsGenerator } from "./generators/redirectsGenerator";
 
 export class Builder {
   readonly baseDirectory: string;
@@ -41,14 +42,22 @@ export class Builder {
     );
 
     // Content
-    const contentRenderer = new ContentGenerator(
+    const contentGenerator = new ContentGenerator(
       baseConfig,
       styles,
       path.join(this.constants.contentPath, "layouts")
     );
-    const contents = contentRenderer.render(
+    contentGenerator.render(
       path.join(this.constants.contentPath, "content"),
       path.join(this.constants.distDirectory)
+    );
+
+    // Redirects
+    const redirectGenerator = new RedirectsGenerator();
+    redirectGenerator.render(
+      baseConfig,
+      path.join(this.constants.distDirectory),
+      path.join(this.constants.contentPath, "layouts")
     );
   }
 }
