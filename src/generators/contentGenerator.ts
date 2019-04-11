@@ -3,19 +3,25 @@ import * as fse from "fs-extra";
 import * as path from "path";
 import * as handlebars from "handlebars";
 import marked = require("marked");
-import ampify = require("ampify");
+import ampify = require("@bradymholt/ampify");
+import pretty = require("pretty");
 import * as cheerio from "cheerio";
 import registerHbsHelpers from "../hbs-helpers";
 import { IPage, IConfig, IStyle, ITemplateData } from "../interfaces";
-import { getCurrentDateInISOFormat } from "../dateHelper";
 import { loadConfigFile } from "../configHelper";
 
 export class ContentGenerator {
   readonly baseConfig: IConfig;
   readonly layoutsDirectory: string;
   readonly styles: Array<IStyle>;
+  readonly ampPageName = "amp.html";
+  readonly contentPageName = "index.html";
+  readonly renderAmpPages = true;
+  readonly prettyHtml = true;
+
   initialized = false;
-  baseSourceDirectory: string | null = null;
+  baseSourceDirectory = "";
+  baseDestDirectory = "";
 
   constructor(
     baseConfig: IConfig,
@@ -27,30 +33,28 @@ export class ContentGenerator {
     this.layoutsDirectory = layoutsDirectory;
   }
 
-  protected initialize(sourceDirectory: string) {
+  protected initialize(sourceDirectory: string, destDirectory: string) {
     if (!this.initialized) {
       this.registerTemplatePartials(this.layoutsDirectory);
       registerHbsHelpers();
       this.baseSourceDirectory = sourceDirectory;
+      this.baseDestDirectory = destDirectory;
 
       this.initialized = true;
     }
   }
 
   public render(sourceDirectory: string, destDirectory: string) {
-    this.initialize(sourceDirectory);
+    this.initialize(sourceDirectory, destDirectory);
 
     let config = this.baseConfig;
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
-    if (sourceDirectoryConfig) {
-      config = Object.assign(config, sourceDirectoryConfig);
-    }
-    if (!config) {
-      throw Error("Config file not found.");
-    }
+    config = Object.assign(config, sourceDirectoryConfig);
 
     const templateData = this.buildTemplateData(config, this.styles);
+
     // TODO: Make this configurable
+    // TODO: Cache these compile templates b/c we are doing this in every directory
     const applyTemplate = this.initializeTemplate(
       path.join(this.layoutsDirectory, "content.hbs")
     );
@@ -60,33 +64,47 @@ export class ContentGenerator {
     );
 
     const pages: Array<IPage> = [];
-    const baseDirFileNames = fs.readdirSync(sourceDirectory);
-    const sortedContentFileNames = baseDirFileNames
+    const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
+    const contentFileNames = sourceDirectoryFileNames
       .filter(
         f =>
           !f.startsWith("_") &&
           !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
           ["md"].includes(path.extname(f).substr(1))
       )
+      // Sort by filename
       .sort((first: string, second: string) => {
         return first.localeCompare(second, "en", { numeric: true });
       });
 
-    for (let currentFileName of sortedContentFileNames) {
-      const pageContent = this.renderContentFile(
-        sourceDirectory,
-        destDirectory,
-        currentFileName,
-        applyTemplate,
-        ampApplyTemplate,
-        templateData,
-        config
+    for (let currentFileName of contentFileNames) {
+      const htmlContent = this.renderFileToHtml(
+        path.join(sourceDirectory, currentFileName)
       );
+
+      const pageContent = this.renderContentFile(
+        currentFileName,
+        htmlContent,
+        applyTemplate,
+        templateData,
+        config,
+        destDirectory
+      );
+
+      if (this.renderAmpPages) {
+        this.renderAmpContentFile(
+          pageContent,
+          htmlContent,
+          ampApplyTemplate,
+          templateData
+        );
+      }
 
       pages.push(pageContent);
     }
 
-    const subDirectoryNames = baseDirFileNames.filter(f => {
+    // Traverse subdirectories and render pages
+    const subDirectoryNames = sourceDirectoryFileNames.filter(f => {
       return fs.statSync(path.join(sourceDirectory, f)).isDirectory();
     });
 
@@ -97,8 +115,8 @@ export class ContentGenerator {
       pages.push(...subContent);
     }
 
-    // Render templates/indexes
-    const indexFileNames = baseDirFileNames.filter(
+    // Render templates
+    const indexFileNames = sourceDirectoryFileNames.filter(
       f =>
         !f.startsWith("_") &&
         !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
@@ -115,6 +133,99 @@ export class ContentGenerator {
     }
 
     return pages;
+  }
+
+  private renderContentFile(
+    currentFileName: string,
+    htmlContent: string,
+    applyTemplate: handlebars.TemplateDelegate<any>,
+    templateData: ITemplateData,
+    config: IConfig,
+    destDirectory: string
+  ) {
+    let date = "";
+    let slug = currentFileName;
+    const fileNameMatcher = currentFileName.match(
+      /(\d{4}-\d{2}-\d{2})?[_|-]?(.*).md/
+    );
+    if (fileNameMatcher != null) {
+      date = fileNameMatcher[1];
+      slug = fileNameMatcher[2];
+    }
+    const $ = cheerio.load(htmlContent, {
+      xmlMode: true
+    });
+    // Default page title to file name (slug)
+    let title = slug;
+    // Use first <h1/> (#) as the page title, if available
+    const h1s = $("h1");
+    if (h1s.length > 0) {
+      const firstH1 = $("h1").first();
+      title = firstH1.text();
+      firstH1.remove();
+    }
+    // Use first <p/> (paragraph) as the page blurb
+    const description = $("p")
+      .first()
+      .html();
+
+    const destDirectorRelativeToBase = destDirectory
+      .replace(this.baseDestDirectory, "")
+      .replace(/^\//, "");
+    const pagePath = path.join(
+      destDirectorRelativeToBase,
+      config.outPath || "",
+      slug
+    );
+    const pagePathFull = path.join(this.baseDestDirectory, pagePath);
+
+    const ampPath = this.renderAmpPages ? `${pagePath}/amp.html` : null;
+    const page = <IPage>{
+      date,
+      path: pagePath,
+      path_amp: ampPath,
+      title,
+      description
+    };
+    const html = $.html();
+    const templatedOutput = applyTemplate(<ITemplateData>(
+      Object.assign({}, templateData, { page }, { content: html })
+    ));
+    // TODO: support other variations of config.outPath like :title/ :year/:title
+
+    fse.emptyDirSync(pagePathFull);
+    const prettyOutput = pretty(templatedOutput, { ocd: true });
+    fs.writeFileSync(
+      path.join(pagePathFull, this.contentPageName),
+      prettyOutput
+    );
+
+    return page;
+  }
+
+  private async renderAmpContentFile(
+    page: IPage,
+    htmlContent: string,
+    applyTemplate: handlebars.TemplateDelegate<any>,
+    templateData: ITemplateData
+  ) {
+    if (!this.baseSourceDirectory) {
+      throw new Error("baseSourceDirectory not set");
+    }
+
+    const templatedOutput = applyTemplate(<ITemplateData>(
+      Object.assign({}, templateData, { page }, { content: htmlContent })
+    ));
+
+    const ampOutput = await ampify(templatedOutput, {
+      cwd: this.baseSourceDirectory.replace(/\/$/, "")
+    });
+
+    const prettyOutput = pretty(ampOutput);
+    fs.writeFileSync(
+      path.join(this.baseDestDirectory, page.path, this.ampPageName),
+      prettyOutput
+    );
   }
 
   private renderTemplateFile(
@@ -161,100 +272,23 @@ export class ContentGenerator {
     fs.writeFileSync(path.join(destDirectory, name), templatedOutput);
   }
 
-  private renderContentFile(
-    sourceDirectory: string,
-    destDirectory: string,
-    currentFileName: string,
-    applyTemplate: handlebars.TemplateDelegate<any>,
-    ampApplyTemplate: handlebars.TemplateDelegate<any>,
-    templateData: ITemplateData,
-    config: IConfig
-  ) {
-    const markdown = fs.readFileSync(
-      path.join(sourceDirectory, currentFileName),
-      { encoding: "utf-8" }
-    );
-    const htmlFromMarkdown = marked(markdown);
-    let date = "";
-    let slug = currentFileName;
-    const fileNameMatcher = currentFileName.match(
-      /(\d{4}-\d{2}-\d{2})?[_|-]?(.*).md/
-    );
-    if (fileNameMatcher != null) {
-      date = fileNameMatcher[1];
-      slug = fileNameMatcher[2];
+  private renderFileToHtml(filePath: string) {
+    let html = null;
+    const source = fs.readFileSync(filePath, { encoding: "utf-8" });
+
+    const fileExtension = path.extname(filePath).substr(1);
+    switch (fileExtension) {
+      case "md":
+        html = marked(source);
+        break;
+      case "htm":
+      case "html":
+        html = source;
+        break;
+      default:
+        throw new Error(`File extension not support: ${fileExtension}`);
     }
-    const $ = cheerio.load(htmlFromMarkdown, {
-      xmlMode: true
-    });
-    // Default page title to file name (slug)
-    let title = slug;
-    // Use first <h1/> (#) as the page title, if available
-    const h1s = $("h1");
-    if (h1s.length > 0) {
-      const firstH1 = $("h1").first();
-      title = firstH1.text();
-      firstH1.remove();
-    }
-    // Use first <p/> (paragraph) as the page blurb
-    const description = $("p")
-      .first()
-      .html();
-
-    const page = <IPage>{
-      date,
-      slug,
-      title,
-      description
-    };
-    const html = $.html();
-    const templatedOutput = applyTemplate(<ITemplateData>(
-      Object.assign({}, templateData, { page }, { content: html })
-    ));
-    // TODO: support other variations of config.outPath like :title/ :year/:title
-    const pageDirectory = path.join(destDirectory, config.outPath || "", slug);
-    fse.emptyDirSync(pageDirectory);
-    fs.writeFileSync(path.join(pageDirectory, "index.html"), templatedOutput);
-
-    this.renderAmpContentFile(
-      page,
-      html,
-      pageDirectory,
-      sourceDirectory,
-      destDirectory,
-      currentFileName,
-      ampApplyTemplate,
-      templateData,
-      config
-    );
-
-    return page;
-  }
-
-  private async renderAmpContentFile(
-    page: IPage,
-    html: string,
-    pageDirectory: string,
-    sourceDirectory: string,
-    destDirectory: string,
-    currentFileName: string,
-    applyTemplate: handlebars.TemplateDelegate<any>,
-    templateData: ITemplateData,
-    config: IConfig
-  ) {
-    if (!this.baseSourceDirectory) {
-      throw new Error("baseSourceDirectory not set");
-    }
-
-    const ampHtml = await ampify(html, {
-      cwd: this.baseSourceDirectory.replace(/\/$/, "")
-    });
-
-    const templatedOutput = applyTemplate(<ITemplateData>(
-      Object.assign({}, templateData, { page }, { content: ampHtml })
-    ));
-
-    fs.writeFileSync(path.join(pageDirectory, "amp.html"), templatedOutput);
+    return html;
   }
 
   private registerTemplatePartials(layoutsDirectory: string) {
@@ -291,7 +325,6 @@ export class ContentGenerator {
 
     const templateData = <ITemplateData>{
       config,
-      buildDate: getCurrentDateInISOFormat(),
       styles: stylesData
     };
 

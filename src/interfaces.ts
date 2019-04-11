@@ -1,7 +1,17 @@
+export interface IConfig {
+  title: string;
+  description: string;
+  url: string;
+  build_timestamp: string;
+  google_analytics_id: string;
+  outPath?: string;
+  redirects: { [source: string]: string };
+}
+
 export interface IPage {
   date?: string;
-  slug?: string;
-  amp_slug?: string;
+  path: string;
+  path_amp?: string;
   title: string;
   description: string;
 }
@@ -11,17 +21,8 @@ export interface IStyle {
   content: string;
 }
 
-export interface IConfig {
-  title: string;
-  description: string;
-  url: string;
-  outPath?: string;
-  redirects: { [source: string]: string };
-}
-
 export interface ITemplateData {
   config: IConfig;
-  buildDate: string;
   template?: {
     assets: { [partialName: string]: IStyle };
   };

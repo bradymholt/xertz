@@ -3,18 +3,18 @@
   <channel>
     <title>{{ site.title }}</title>
     <description>{{ site.description }}</description>
-    <link>{{ site.url }}</link>
-    <atom:link href="{{ site.url }}/{{ page.slug }}" rel="self" type="application/rss+xml"/>
-    <pubDate>{{ site.time }}</pubDate>
-    <lastBuildDate>{{ site.time }}</lastBuildDate>
+    <link>{{ config.url }}</link>
+    <atom:link href="{{ config.url }}/{{ config.rss_path }}" rel="self" type="application/rss+xml"/>
+    <pubDate>TODO</pubDate>
+    <lastBuildDate>TODO</lastBuildDate>
     <generator>amplog</generator>
     {{#each pages}}
       <item>
         <title>{{ this.title }}</title>
         <description>{{ this.blurb }}</description>
         <pubDate>{{ this.date }}</pubDate>
-        <link>{{ site.url }}/{{ this.slug }}</link>
-        <guid isPermaLink="true">{{ site.url }}/{{ this.slug }}</guid>
+        <link>{{ config.url }}/{{ this.path }}</link>
+        <guid isPermaLink="true">{{ config.url }}/{{ this.path }}</guid>
       </item>
     {{/each}}
   </channel>

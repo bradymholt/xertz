@@ -13,6 +13,6 @@ export function loadConfigFile(sourceDirectory: string) {
     );
     return yaml.safeLoad(configFileContent) as IConfig;
   } else {
-    return null;
+    return {} as IConfig;
   }
 }

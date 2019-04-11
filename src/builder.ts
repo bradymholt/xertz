@@ -8,6 +8,7 @@ import { AssetGenerator } from "./generators/assetGenerator";
 import { ContentGenerator } from "./generators/contentGenerator";
 import { loadConfigFile } from "./configHelper";
 import { RedirectsGenerator } from "./generators/redirectsGenerator";
+import { getCurrentDateInISOFormat } from "./dateHelper";
 
 export class Builder {
   readonly baseDirectory: string;
@@ -25,6 +26,7 @@ export class Builder {
   start() {
     fse.emptyDirSync(this.constants.distDirectory);
     let baseConfig = loadConfigFile(this.constants.contentPath);
+    baseConfig.build_timestamp = getCurrentDateInISOFormat();
     if (!baseConfig) {
       throw Error("Config file not found.");
     }

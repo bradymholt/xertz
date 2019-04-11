@@ -16,7 +16,7 @@ export class RedirectsGenerator {
 
     for (let redirectPath in config.redirects) {
       const output = applyTemplate(
-        { slug: config.redirects[redirectPath] }
+        { path: config.redirects[redirectPath] }
       )
       const outFile = path.join(destDirectory, redirectPath);
       fse.ensureFileSync(outFile);
