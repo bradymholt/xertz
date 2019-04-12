@@ -8,12 +8,23 @@ export interface IConfig {
   redirects: { [source: string]: string };
 }
 
+export interface IContentSource {
+  data: {
+    [key: string]: any;
+  };
+  html: string;
+  excerpt: string;
+}
+
 export interface IPage {
+  title: string;
+}
+
+export interface IContentPage extends IPage {
   date?: string;
+  excerpt: string;
   path: string;
   path_amp?: string;
-  title: string;
-  description: string;
 }
 
 export interface IStyle {
@@ -27,8 +38,8 @@ export interface ITemplateData {
     assets: { [partialName: string]: IStyle };
   };
   content?: string;
-  page?: IPage;
-  pages?: Array<IPage>;
+  page?: IContentPage;
+  pages?: Array<IContentPage>;
 }
 
 export interface IConstants {

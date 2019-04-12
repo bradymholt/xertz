@@ -5,9 +5,16 @@ import * as handlebars from "handlebars";
 import marked = require("marked");
 import ampify = require("@bradymholt/ampify");
 import pretty = require("pretty");
-import * as cheerio from "cheerio";
+import matter = require("gray-matter");
 import registerHbsHelpers from "../hbs-helpers";
-import { IPage, IConfig, IStyle, ITemplateData } from "../interfaces";
+import {
+  IContentPage,
+  IConfig,
+  IStyle,
+  ITemplateData,
+  IContentSource,
+  IPage
+} from "../interfaces";
 import { loadConfigFile } from "../configHelper";
 
 export class ContentGenerator {
@@ -63,7 +70,7 @@ export class ContentGenerator {
       path.join(this.layoutsDirectory, "amp.hbs")
     );
 
-    const pages: Array<IPage> = [];
+    const pages: Array<IContentPage> = [];
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
     const contentFileNames = sourceDirectoryFileNames
       .filter(
@@ -78,13 +85,13 @@ export class ContentGenerator {
       });
 
     for (let currentFileName of contentFileNames) {
-      const htmlContent = this.renderFileToHtml(
+      const contentFile = this.readContentFile(
         path.join(sourceDirectory, currentFileName)
       );
 
       const pageContent = this.renderContentFile(
         currentFileName,
-        htmlContent,
+        contentFile,
         applyTemplate,
         templateData,
         config,
@@ -94,7 +101,7 @@ export class ContentGenerator {
       if (this.renderAmpPages) {
         this.renderAmpContentFile(
           pageContent,
-          htmlContent,
+          contentFile,
           ampApplyTemplate,
           templateData
         );
@@ -115,6 +122,7 @@ export class ContentGenerator {
       pages.push(...subContent);
     }
 
+    // Now that we've render pages in sourceDirectory and all subdirectories...
     // Render templates
     const indexFileNames = sourceDirectoryFileNames.filter(
       f =>
@@ -137,37 +145,34 @@ export class ContentGenerator {
 
   private renderContentFile(
     currentFileName: string,
-    htmlContent: string,
+    content: IContentSource,
     applyTemplate: handlebars.TemplateDelegate<any>,
     templateData: ITemplateData,
     config: IConfig,
     destDirectory: string
   ) {
-    let date = "";
-    let slug = currentFileName;
+    // Defaults
+    let date = content.data.date;
+    let slug = content.data.slug;
+    let title = content.data.title;
+
     const fileNameMatcher = currentFileName.match(
       /(\d{4}-\d{2}-\d{2})?[_|-]?(.*).md/
     );
     if (fileNameMatcher != null) {
-      date = fileNameMatcher[1];
-      slug = fileNameMatcher[2];
+      if (!date) {
+        date = fileNameMatcher[1];
+      }
+
+      if (!slug) {
+        slug = fileNameMatcher[2];
+      }
     }
-    const $ = cheerio.load(htmlContent, {
-      xmlMode: true
-    });
-    // Default page title to file name (slug)
-    let title = slug;
-    // Use first <h1/> (#) as the page title, if available
-    const h1s = $("h1");
-    if (h1s.length > 0) {
-      const firstH1 = $("h1").first();
-      title = firstH1.text();
-      firstH1.remove();
+
+    if (!title) {
+      // Default page title to file name (slug)
+      title = slug;
     }
-    // Use first <p/> (paragraph) as the page blurb
-    const description = $("p")
-      .first()
-      .html();
 
     const destDirectorRelativeToBase = destDirectory
       .replace(this.baseDestDirectory, "")
@@ -180,16 +185,16 @@ export class ContentGenerator {
     const pagePathFull = path.join(this.baseDestDirectory, pagePath);
 
     const ampPath = this.renderAmpPages ? `${pagePath}/amp.html` : null;
-    const page = <IPage>{
+    const page = <IContentPage>{
       date,
       path: pagePath,
       path_amp: ampPath,
       title,
-      description
+      excerpt: content.excerpt
     };
-    const html = $.html();
+
     const templatedOutput = applyTemplate(<ITemplateData>(
-      Object.assign({}, templateData, { page }, { content: html })
+      Object.assign({}, templateData, { page }, { content: content.html })
     ));
     // TODO: support other variations of config.outPath like :title/ :year/:title
 
@@ -204,8 +209,8 @@ export class ContentGenerator {
   }
 
   private async renderAmpContentFile(
-    page: IPage,
-    htmlContent: string,
+    page: IContentPage,
+    content: IContentSource,
     applyTemplate: handlebars.TemplateDelegate<any>,
     templateData: ITemplateData
   ) {
@@ -214,7 +219,7 @@ export class ContentGenerator {
     }
 
     const templatedOutput = applyTemplate(<ITemplateData>(
-      Object.assign({}, templateData, { page }, { content: htmlContent })
+      Object.assign({}, templateData, { page }, { content: content.html })
     ));
 
     const ampOutput = await ampify(templatedOutput, {
@@ -233,7 +238,7 @@ export class ContentGenerator {
     destDirectory: string,
     currentFileName: string,
     templateData: ITemplateData,
-    pages: Array<IPage>
+    pages: Array<IContentPage>
   ) {
     // TODO: Move this to initializeTemplate but we need it because we need templateContent to extract title
     const templateContent = fs.readFileSync(
@@ -242,24 +247,11 @@ export class ContentGenerator {
         encoding: "utf-8"
       }
     );
-    const applyTemplate = handlebars.compile(templateContent);
-
-    const $ = cheerio.load(templateContent, {
-      xmlMode: true
-    });
-
-    let title = "";
-    // Use first <h1/> (#) as the page title, if available
-    const h1s = $("h1");
-    if (h1s.length > 0) {
-      const firstH1 = $("h1").first();
-      title = firstH1.text();
-      firstH1.remove();
-    }
+    const parsedMatter = matter(templateContent);
+    const applyTemplate = handlebars.compile(parsedMatter.content);
 
     const page = <IPage>{
-      title,
-      description: title
+      title: parsedMatter.data.title || ""
     };
 
     const templatedOutput = applyTemplate(<ITemplateData>(
@@ -272,23 +264,43 @@ export class ContentGenerator {
     fs.writeFileSync(path.join(destDirectory, name), templatedOutput);
   }
 
-  private renderFileToHtml(filePath: string) {
-    let html = null;
+  private readContentFile(filePath: string): IContentSource {
     const source = fs.readFileSync(filePath, { encoding: "utf-8" });
+
+    const parsedMatter = matter(source, {
+      excerpt: (input: matter.GrayMatterFile<string>, options) => {
+        // Except will be content after front matter and preceeding first line break
+        input.excerpt = input.content.substring(0, input.content.indexOf("\n"));
+      }
+    });
+
+    const data = parsedMatter.data;
+    let excerpt = "";
+    let html = "";
 
     const fileExtension = path.extname(filePath).substr(1);
     switch (fileExtension) {
       case "md":
-        html = marked(source);
+        // Parse markdown
+        html = marked(parsedMatter.content);
+        if (parsedMatter.excerpt) {
+          excerpt = marked(parsedMatter.excerpt);
+        }
         break;
       case "htm":
       case "html":
-        html = source;
+        html = parsedMatter.content;
+        excerpt = parsedMatter.excerpt || "";
         break;
       default:
         throw new Error(`File extension not support: ${fileExtension}`);
     }
-    return html;
+
+    return {
+      data,
+      html,
+      excerpt
+    };
   }
 
   private registerTemplatePartials(layoutsDirectory: string) {

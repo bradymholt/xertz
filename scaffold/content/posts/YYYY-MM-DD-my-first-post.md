@@ -1,4 +1,6 @@
-# My First Post
+---
+title: My First Post
+---
 
 Hello there.  This is my first post.
 

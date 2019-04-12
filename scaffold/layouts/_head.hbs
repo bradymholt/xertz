@@ -1,8 +1,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  {{#if page.title }}
   <title>{{ page.title }}</title>
-  <meta name="description" content="{{ page.description }}" />
+  {{else}}
+  <title>{{ config.title }}</title>   
+  {{/if}}
+  <meta name="description" content="{{ page.excerpt }}" />
   <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Serif" rel="stylesheet" type="text/css"/>
   <style type="text/css">{{{ styles.default.content }}}</style>
   <link rel="canonical" href="{{ config.url }}/{{ page.path }}">
