@@ -270,7 +270,12 @@ export class ContentGenerator {
     const parsedMatter = matter(source, {
       excerpt: (input: matter.GrayMatterFile<string>, options) => {
         // Except will be content after front matter and preceeding first line break
-        input.excerpt = input.content.substring(0, input.content.indexOf("\n"));
+        const trimmedContent = input.content.trim();
+        const indexOfFirstLineBreak = trimmedContent.indexOf("\n");
+        input.excerpt = trimmedContent.substring(
+          0,
+          indexOfFirstLineBreak > -1 ? indexOfFirstLineBreak : undefined
+        );
       }
     });
 
