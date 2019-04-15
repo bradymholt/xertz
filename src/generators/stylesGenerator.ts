@@ -2,29 +2,33 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as sass from "node-sass";
+import { Options } from "node-sass";
 import { IStyle } from "../interfaces";
 
 export class StylesGenerator {
+  readonly extensionsToInclude = ["scss", "sass", "css"];
+  readonly outputStyle = "compressed";
+
   public render(sourceDirectory: string, destDirectory: string) {
     const styles: Array<IStyle> = [];
     const baseDirFileNames = fs.readdirSync(sourceDirectory);
-    const cssFileNames = baseDirFileNames.filter(
-      f =>
-        !f.startsWith("_") &&
+    const cssFileNames = baseDirFileNames.filter(f => {
+      const extension = path.extname(f).substr(1);
+      !f.startsWith("_") &&
         !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
-        ["scss", "sass", "css"].includes(path.extname(f).substr(1))
-    );
+        this.extensionsToInclude.includes(extension);
+    });
     for (let currentFileName of cssFileNames) {
       const currentFile = path.join(sourceDirectory, currentFileName);
       const content = sass
         .renderSync({
           file: currentFile,
-          outputStyle: "compressed"
+          outputStyle: this.outputStyle
         })
         .css.toString();
 
-      const outFileName =
-        currentFileName.replace(".sass", "").replace(".scss", "") + ".css";
+      const name = path.parse(currentFile).name;
+      const outFileName = name + ".css";
 
       fse.emptyDirSync(destDirectory);
       fs.writeFileSync(path.join(destDirectory, outFileName), content);

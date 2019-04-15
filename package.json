@@ -5,7 +5,7 @@
   "main": "index.js",
   "bin": "bin/start.js",
   "scripts": {
-    "start": "./bin/start.js build ./test/site",
+    "start": "./bin/start.js build ./scaffold",
     "test": "jest"
   },
   "author": "Brady Holt",

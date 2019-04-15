@@ -41,8 +41,3 @@ export interface ITemplateData {
   page?: IContentPage;
   pages?: Array<IContentPage>;
 }
-
-export interface IConstants {
-  distDirectory: string;
-  contentPath: string;
-}

@@ -2,11 +2,12 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 import * as handlebars from "handlebars";
-import marked = require("marked");
+import marked from "marked";
 import ampify = require("@bradymholt/ampify");
-import pretty = require("pretty");
-import matter = require("gray-matter");
+import pretty from "pretty";
+import matter from "gray-matter";
 import registerHbsHelpers from "../hbs-helpers";
+import { loadConfigFile } from "../configHelper";
 import {
   IContentPage,
   IConfig,
@@ -15,7 +16,6 @@ import {
   IContentSource,
   IPage
 } from "../interfaces";
-import { loadConfigFile } from "../configHelper";
 
 export class ContentGenerator {
   readonly baseConfig: IConfig;
@@ -23,6 +23,9 @@ export class ContentGenerator {
   readonly styles: Array<IStyle>;
   readonly ampPageName = "amp.html";
   readonly contentPageName = "index.html";
+  readonly contentExtensionsToInclude = ["md"];
+
+  // Options
   readonly renderAmpPages = true;
   readonly prettyHtml = true;
 
@@ -77,7 +80,7 @@ export class ContentGenerator {
         f =>
           !f.startsWith("_") &&
           !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
-          ["md"].includes(path.extname(f).substr(1))
+          this.contentExtensionsToInclude.includes(path.extname(f).substr(1))
       )
       // Sort by filename
       .sort((first: string, second: string) => {
@@ -291,11 +294,6 @@ export class ContentGenerator {
         if (parsedMatter.excerpt) {
           excerpt = marked(parsedMatter.excerpt);
         }
-        break;
-      case "htm":
-      case "html":
-        html = parsedMatter.content;
-        excerpt = parsedMatter.excerpt || "";
         break;
       default:
         throw new Error(`File extension not support: ${fileExtension}`);
