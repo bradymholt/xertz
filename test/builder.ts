@@ -4,7 +4,7 @@ import * as path from "path";
 import { getCurrentDateInISOFormat } from "../src/dateHelper";
 
 describe("start", function() {
-  it.only("builds scaffold correct", function() {
+  it("builds scaffold correct", function() {
     const source = path.join(__dirname, "../scaffold/");
     const dest = path.join(__dirname, "./tmp_scaffold");
     fse.emptyDirSync(dest);

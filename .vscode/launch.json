@@ -9,11 +9,19 @@
       "args": ["${workspaceRoot}/bin/amplog.js"]
     },
     {
-      "name": "test",
+      "name": "Test - All",
+      "type": "node",
+      "request": "launch",      
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": ["--runInBand"]      
+    },
+    {
+      "name": "Test - Current File",
       "type": "node",
       "request": "launch",      
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "args": ["${relativeFile}"]      
-    }
+    },
+    
   ]
 }

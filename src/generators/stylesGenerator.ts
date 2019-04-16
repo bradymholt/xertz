@@ -7,18 +7,20 @@ import { IStyle } from "../interfaces";
 
 export class StylesGenerator {
   readonly extensionsToInclude = ["scss", "sass", "css"];
+  readonly outFileExtension = "css";
   readonly outputStyle = "compressed";
 
   public render(sourceDirectory: string, destDirectory: string) {
     const styles: Array<IStyle> = [];
     const baseDirFileNames = fs.readdirSync(sourceDirectory);
-    const cssFileNames = baseDirFileNames.filter(f => {
+    const cssFileNamesToProcess = baseDirFileNames.filter(f => {
       const extension = path.extname(f).substr(1);
       !f.startsWith("_") &&
         !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
         this.extensionsToInclude.includes(extension);
     });
-    for (let currentFileName of cssFileNames) {
+
+    for (let currentFileName of cssFileNamesToProcess) {
       const currentFile = path.join(sourceDirectory, currentFileName);
       const content = sass
         .renderSync({
@@ -27,8 +29,8 @@ export class StylesGenerator {
         })
         .css.toString();
 
-      const name = path.parse(currentFile).name;
-      const outFileName = name + ".css";
+      const fileName = path.parse(currentFile).name;
+      const outFileName = `${fileName}.${this.outFileExtension}`;
 
       fse.emptyDirSync(destDirectory);
       fs.writeFileSync(path.join(destDirectory, outFileName), content);

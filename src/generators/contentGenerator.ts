@@ -8,22 +8,17 @@ import pretty from "pretty";
 import matter from "gray-matter";
 import registerHbsHelpers from "../hbs-helpers";
 import { loadConfigFile } from "../configHelper";
-import {
-  IContentPage,
-  IConfig,
-  IStyle,
-  ITemplateData,
-  IContentSource,
-  IPage
-} from "../interfaces";
+import * as interfaces from "../interfaces";
 
 export class ContentGenerator {
-  readonly baseConfig: IConfig;
+  readonly baseConfig: interfaces.IConfig;
   readonly layoutsDirectory: string;
-  readonly styles: Array<IStyle>;
+  readonly styles: Array<interfaces.IStyle>;
   readonly ampPageName = "amp.html";
   readonly contentPageName = "index.html";
   readonly contentExtensionsToInclude = ["md"];
+  readonly defaultPageLayout = "page.hbs";
+  readonly ampLayout = "amp.hbs";  
 
   // Options
   readonly renderAmpPages = true;
@@ -34,8 +29,8 @@ export class ContentGenerator {
   baseDestDirectory = "";
 
   constructor(
-    baseConfig: IConfig,
-    styles: Array<IStyle>,
+    baseConfig: interfaces.IConfig,
+    styles: Array<interfaces.IStyle>,
     layoutsDirectory: string
   ) {
     this.baseConfig = baseConfig;
@@ -66,14 +61,14 @@ export class ContentGenerator {
     // TODO: Make this configurable
     // TODO: Cache these compile templates b/c we are doing this in every directory
     const applyTemplate = this.initializeTemplate(
-      path.join(this.layoutsDirectory, "content.hbs")
+      path.join(this.layoutsDirectory, this.defaultPageLayout)
     );
 
     const ampApplyTemplate = this.initializeTemplate(
-      path.join(this.layoutsDirectory, "amp.hbs")
+      path.join(this.layoutsDirectory, this.ampLayout)
     );
 
-    const pages: Array<IContentPage> = [];
+    const pages: Array<interfaces.IContentPage> = [];
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
     const contentFileNames = sourceDirectoryFileNames
       .filter(
@@ -125,8 +120,9 @@ export class ContentGenerator {
       pages.push(...subContent);
     }
 
-    // Now that we've render pages in sourceDirectory and all subdirectories...
+    // Now that we've rendered pages in sourceDirectory and all subdirectories...
     // Render templates
+    // TODO: move this to another generator
     const indexFileNames = sourceDirectoryFileNames.filter(
       f =>
         !f.startsWith("_") &&
@@ -148,15 +144,18 @@ export class ContentGenerator {
 
   private renderContentFile(
     currentFileName: string,
-    content: IContentSource,
+    content: interfaces.IContentSource,
     applyTemplate: handlebars.TemplateDelegate<any>,
-    templateData: ITemplateData,
-    config: IConfig,
+    templateData: interfaces.ITemplateData,
+    config: interfaces.IConfig,
     destDirectory: string
   ) {
     // Defaults
     let date = content.data.date;
-    let slug = content.data.slug;
+    
+    // "slug" or "permalink" can be used to specify page slug
+    let slug = content.data.slug || content.data.permalink;
+    
     let title = content.data.title;
 
     const fileNameMatcher = currentFileName.match(
@@ -188,7 +187,7 @@ export class ContentGenerator {
     const pagePathFull = path.join(this.baseDestDirectory, pagePath);
 
     const ampPath = this.renderAmpPages ? `${pagePath}/amp.html` : null;
-    const page = <IContentPage>{
+    const page = <interfaces.IContentPage>{
       date,
       path: pagePath,
       path_amp: ampPath,
@@ -196,7 +195,7 @@ export class ContentGenerator {
       excerpt: content.excerpt
     };
 
-    const templatedOutput = applyTemplate(<ITemplateData>(
+    const templatedOutput = applyTemplate(<interfaces.ITemplateData>(
       Object.assign({}, templateData, { page }, { content: content.html })
     ));
     // TODO: support other variations of config.outPath like :title/ :year/:title
@@ -212,16 +211,16 @@ export class ContentGenerator {
   }
 
   private async renderAmpContentFile(
-    page: IContentPage,
-    content: IContentSource,
+    page: interfaces.IContentPage,
+    content: interfaces.IContentSource,
     applyTemplate: handlebars.TemplateDelegate<any>,
-    templateData: ITemplateData
+    templateData: interfaces.ITemplateData
   ) {
     if (!this.baseSourceDirectory) {
       throw new Error("baseSourceDirectory not set");
     }
 
-    const templatedOutput = applyTemplate(<ITemplateData>(
+    const templatedOutput = applyTemplate(<interfaces.ITemplateData>(
       Object.assign({}, templateData, { page }, { content: content.html })
     ));
 
@@ -240,8 +239,8 @@ export class ContentGenerator {
     sourceDirectory: string,
     destDirectory: string,
     currentFileName: string,
-    templateData: ITemplateData,
-    pages: Array<IContentPage>
+    templateData: interfaces.ITemplateData,
+    pages: Array<interfaces.IContentPage>
   ) {
     // TODO: Move this to initializeTemplate but we need it because we need templateContent to extract title
     const templateContent = fs.readFileSync(
@@ -253,11 +252,11 @@ export class ContentGenerator {
     const parsedMatter = matter(templateContent);
     const applyTemplate = handlebars.compile(parsedMatter.content);
 
-    const page = <IPage>{
+    const page = <interfaces.IPage>{
       title: parsedMatter.data.title || ""
     };
 
-    const templatedOutput = applyTemplate(<ITemplateData>(
+    const templatedOutput = applyTemplate(<interfaces.ITemplateData>(
       Object.assign({}, templateData, { page }, { pages })
     ));
 
@@ -267,7 +266,7 @@ export class ContentGenerator {
     fs.writeFileSync(path.join(destDirectory, name), templatedOutput);
   }
 
-  private readContentFile(filePath: string): IContentSource {
+  private readContentFile(filePath: string): interfaces.IContentSource {
     const source = fs.readFileSync(filePath, { encoding: "utf-8" });
 
     const parsedMatter = matter(source, {
@@ -326,19 +325,19 @@ export class ContentGenerator {
     }
   }
 
-  private buildTemplateData(config: IConfig, styles: Array<IStyle>) {
+  private buildTemplateData(config: interfaces.IConfig, styles: Array<interfaces.IStyle>) {
     // Render styles and group by name
     const stylesData: {
-      [partialName: string]: IStyle;
+      [partialName: string]: interfaces.IStyle;
     } = styles.reduce(
-      (root: { [partialName: string]: IStyle }, current: IStyle) => {
+      (root: { [partialName: string]: interfaces.IStyle }, current: interfaces.IStyle) => {
         root[current.name] = current;
         return root;
       },
-      {} as { [partialName: string]: IStyle }
+      {} as { [partialName: string]: interfaces.IStyle }
     );
 
-    const templateData = <ITemplateData>{
+    const templateData = <interfaces.ITemplateData>{
       config,
       styles: stylesData
     };
