@@ -15,9 +15,11 @@ export class StylesGenerator {
     const baseDirFileNames = fs.readdirSync(sourceDirectory);
     const cssFileNamesToProcess = baseDirFileNames.filter(f => {
       const extension = path.extname(f).substr(1);
-      !f.startsWith("_") &&
+      return (
+        !f.startsWith("_") &&
         !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
-        this.extensionsToInclude.includes(extension);
+        this.extensionsToInclude.includes(extension)
+      );
     });
 
     for (let currentFileName of cssFileNamesToProcess) {

@@ -1,24 +1,25 @@
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
+
 import * as handlebars from "handlebars";
 import marked from "marked";
-import ampify = require("@bradymholt/ampify");
 import pretty from "pretty";
 import matter from "gray-matter";
+
 import registerHbsHelpers from "../hbs-helpers";
 import { loadConfigFile } from "../configHelper";
 import * as interfaces from "../interfaces";
+import { TemplateGenerator } from "./templateGenerator";
+import { AmpGenerator } from "./ampGenerator";
 
 export class ContentGenerator {
   readonly baseConfig: interfaces.IConfig;
   readonly layoutsDirectory: string;
   readonly styles: Array<interfaces.IStyle>;
-  readonly ampPageName = "amp.html";
   readonly contentPageName = "index.html";
   readonly contentExtensionsToInclude = ["md"];
   readonly defaultPageLayout = "page.hbs";
-  readonly ampLayout = "amp.hbs";  
 
   // Options
   readonly renderAmpPages = true;
@@ -27,6 +28,9 @@ export class ContentGenerator {
   initialized = false;
   baseSourceDirectory = "";
   baseDestDirectory = "";
+  baseTemplateData: interfaces.ITemplateData | null = null;
+  templateGenerator: TemplateGenerator | null = null;
+  ampGenerator: AmpGenerator | null = null;
 
   constructor(
     baseConfig: interfaces.IConfig,
@@ -42,8 +46,24 @@ export class ContentGenerator {
     if (!this.initialized) {
       this.registerTemplatePartials(this.layoutsDirectory);
       registerHbsHelpers();
+
       this.baseSourceDirectory = sourceDirectory;
       this.baseDestDirectory = destDirectory;
+
+      this.baseTemplateData = this.buildTemplateData(
+        this.baseConfig,
+        this.styles
+      );
+
+      this.templateGenerator = new TemplateGenerator();
+
+      if (this.renderAmpPages) {
+        this.ampGenerator = new AmpGenerator(
+          this.baseSourceDirectory,
+          this.baseDestDirectory,
+          this.layoutsDirectory
+        );
+      }
 
       this.initialized = true;
     }
@@ -56,16 +76,12 @@ export class ContentGenerator {
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
     config = Object.assign(config, sourceDirectoryConfig);
 
-    const templateData = this.buildTemplateData(config, this.styles);
+    const templateData = Object.assign({}, this.baseTemplateData, { config });
 
     // TODO: Make this configurable
     // TODO: Cache these compile templates b/c we are doing this in every directory
     const applyTemplate = this.initializeTemplate(
       path.join(this.layoutsDirectory, this.defaultPageLayout)
-    );
-
-    const ampApplyTemplate = this.initializeTemplate(
-      path.join(this.layoutsDirectory, this.ampLayout)
     );
 
     const pages: Array<interfaces.IContentPage> = [];
@@ -96,13 +112,8 @@ export class ContentGenerator {
         destDirectory
       );
 
-      if (this.renderAmpPages) {
-        this.renderAmpContentFile(
-          pageContent,
-          contentFile,
-          ampApplyTemplate,
-          templateData
-        );
+      if (this.renderAmpPages && this.ampGenerator) {
+        this.ampGenerator.render(pageContent, contentFile, templateData);
       }
 
       pages.push(pageContent);
@@ -120,20 +131,11 @@ export class ContentGenerator {
       pages.push(...subContent);
     }
 
-    // Now that we've rendered pages in sourceDirectory and all subdirectories...
-    // Render templates
-    // TODO: move this to another generator
-    const indexFileNames = sourceDirectoryFileNames.filter(
-      f =>
-        !f.startsWith("_") &&
-        !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
-        ["hbs"].includes(path.extname(f).substr(1))
-    );
-    for (let currentFileName of indexFileNames) {
-      this.renderTemplateFile(
+    // Generate any template pages in the source directory using pages from current and all subdirectories
+    if (this.templateGenerator) {
+      this.templateGenerator.render(
         sourceDirectory,
         destDirectory,
-        currentFileName,
         templateData,
         pages
       );
@@ -152,10 +154,10 @@ export class ContentGenerator {
   ) {
     // Defaults
     let date = content.data.date;
-    
+
     // "slug" or "permalink" can be used to specify page slug
     let slug = content.data.slug || content.data.permalink;
-    
+
     let title = content.data.title;
 
     const fileNameMatcher = currentFileName.match(
@@ -208,62 +210,6 @@ export class ContentGenerator {
     );
 
     return page;
-  }
-
-  private async renderAmpContentFile(
-    page: interfaces.IContentPage,
-    content: interfaces.IContentSource,
-    applyTemplate: handlebars.TemplateDelegate<any>,
-    templateData: interfaces.ITemplateData
-  ) {
-    if (!this.baseSourceDirectory) {
-      throw new Error("baseSourceDirectory not set");
-    }
-
-    const templatedOutput = applyTemplate(<interfaces.ITemplateData>(
-      Object.assign({}, templateData, { page }, { content: content.html })
-    ));
-
-    const ampOutput = await ampify(templatedOutput, {
-      cwd: this.baseSourceDirectory.replace(/\/$/, "")
-    });
-
-    const prettyOutput = pretty(ampOutput);
-    fs.writeFileSync(
-      path.join(this.baseDestDirectory, page.path, this.ampPageName),
-      prettyOutput
-    );
-  }
-
-  private renderTemplateFile(
-    sourceDirectory: string,
-    destDirectory: string,
-    currentFileName: string,
-    templateData: interfaces.ITemplateData,
-    pages: Array<interfaces.IContentPage>
-  ) {
-    // TODO: Move this to initializeTemplate but we need it because we need templateContent to extract title
-    const templateContent = fs.readFileSync(
-      path.join(sourceDirectory, currentFileName),
-      {
-        encoding: "utf-8"
-      }
-    );
-    const parsedMatter = matter(templateContent);
-    const applyTemplate = handlebars.compile(parsedMatter.content);
-
-    const page = <interfaces.IPage>{
-      title: parsedMatter.data.title || ""
-    };
-
-    const templatedOutput = applyTemplate(<interfaces.ITemplateData>(
-      Object.assign({}, templateData, { page }, { pages })
-    ));
-
-    // TODO: don't hardcode .hbs extension
-    // TODO: config outPath is ignored for template files...I think this is ok but need to make obvious
-    const name = currentFileName.replace(".hbs", "");
-    fs.writeFileSync(path.join(destDirectory, name), templatedOutput);
   }
 
   private readContentFile(filePath: string): interfaces.IContentSource {
@@ -325,12 +271,18 @@ export class ContentGenerator {
     }
   }
 
-  private buildTemplateData(config: interfaces.IConfig, styles: Array<interfaces.IStyle>) {
+  private buildTemplateData(
+    config: interfaces.IConfig,
+    styles: Array<interfaces.IStyle>
+  ) {
     // Render styles and group by name
     const stylesData: {
       [partialName: string]: interfaces.IStyle;
     } = styles.reduce(
-      (root: { [partialName: string]: interfaces.IStyle }, current: interfaces.IStyle) => {
+      (
+        root: { [partialName: string]: interfaces.IStyle },
+        current: interfaces.IStyle
+      ) => {
         root[current.name] = current;
         return root;
       },
