@@ -3,11 +3,11 @@ title: Posts
 ---
 {{#> default }}
 <div>
-  <h1>This year's posts</h1>
+  <h1>Posts</h1>
   <ul class="post-list">
     {{#each pages}}
     <li>
-      <a class="post-link" href="/{{ this.path }}">{{this.title}}</a>
+      <a class="post-link" href="/{{ this.path }}">{{ this.title }}</a>
     </li>
     {{/each}}
   </ul>
