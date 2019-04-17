@@ -17,6 +17,7 @@ export interface IFrontMatter {
   date: string;
   path: string,
   slug: string;
+  type: string;
   excerpt: string;
   
   path_amp: string,

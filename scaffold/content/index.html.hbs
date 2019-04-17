@@ -2,9 +2,9 @@
 <div class="home">
   <h1>Latest Posts</h1>
   <ul class="post-list">
-    {{#each (limit pages 10)}}
+    {{#each (limit (filter pages "type" "post") 10) }}    
     <li>
-      <span class="post-meta">{{ this.date }}</span>
+      <span class="post-meta">{{ dateFormat this.date "MMM D, YYYY" }}</span>
       <h2>
         <a class="post-link" href="/{{ this.path }}">{{this.title}}</a>
       </h2>
