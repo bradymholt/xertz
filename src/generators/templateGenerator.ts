@@ -29,7 +29,7 @@ export class TemplateGenerator {
     pages: Array<IPageConfig>
   ) {
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
-    const templateFileNamesToDProcess = sourceDirectoryFileNames.filter(f => {
+    const templateFileNamesToProcess = sourceDirectoryFileNames.filter(f => {
       const extension = path.extname(f).substr(1);
       return (
         !f.startsWith("_") &&
@@ -37,7 +37,11 @@ export class TemplateGenerator {
         this.extensionsToInclude.includes(extension)
       );
     });
-    for (let currentFileName of templateFileNamesToDProcess) {
+
+    // Sort pages by date descending
+    pages.sort((first, second)=> first.date.localeCompare(second.date));
+    
+    for (let currentFileName of templateFileNamesToProcess) {
       this.renderTemplateFile(
         sourceDirectory,
         destDirectory,
