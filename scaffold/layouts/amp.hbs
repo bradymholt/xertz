@@ -19,11 +19,11 @@
 <body>
     {{> header }}
     <h1 class="post-title">
-        {{ page.title }}
+        {{ title }}
     </h1>
     <div class="post-content">
       <span>
-          <i>{{ page.date }}</i>
+          <i>{{ date }}</i>
       </span>
       {{{ content }}}
     </div>
@@ -31,7 +31,7 @@
     <amp-analytics type="googleanalytics">
         <script type="application/json">
         { "vars": {
-            "account": "{{ config.google_analytics_id }}"
+            "account": "{{ google_analytics_id }}"
             },
             "triggers": {
             "trackPageview": {

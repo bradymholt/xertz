@@ -38,6 +38,7 @@ export class StylesGenerator {
       fs.writeFileSync(path.join(destDirectory, outFileName), content);
 
       // TODO: Also include path to rendered file
+      // TODO: What if 2 styles have the same name
       const style = <IStyle>{
         name: path.parse(currentFileName).name,
         content

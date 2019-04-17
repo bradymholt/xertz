@@ -5,11 +5,14 @@ import pretty from "pretty";
 import * as handlebars from "handlebars";
 import ampify = require("@bradymholt/ampify");
 
-import { IContentPage, ITemplateData, IContentSource } from "../interfaces";
+import { ITemplateData, IPageConfig } from "../interfaces";
 
 export class AmpGenerator {
   readonly ampPageName = "amp.html";
   readonly ampLayout = "amp.hbs";
+
+  // Options
+  readonly prettyHtml = true;
 
   readonly baseSourceDirectory: string;
   readonly baseDestDirectory: string;
@@ -30,22 +33,22 @@ export class AmpGenerator {
   }
 
   public async render(
-    page: IContentPage,
-    content: IContentSource,
+    page: IPageConfig,
     templateData: ITemplateData
   ) {
-    const templatedOutput = this.applyTemplate(<ITemplateData>(
-      Object.assign({}, templateData, { page }, { content: content.html })
-    ));
+    const templatedOutput = this.applyTemplate(templateData);
 
-    const ampOutput = await ampify(templatedOutput, {
+    let ampOutput = await ampify(templatedOutput, {
       cwd: this.baseSourceDirectory.replace(/\/$/, "")
     });
 
-    const prettyOutput = pretty(ampOutput);
+    if (this.prettyHtml) {
+      ampOutput = pretty(ampOutput, { ocd: true });
+    }
+
     fs.writeFileSync(
       path.join(this.baseDestDirectory, page.path, this.ampPageName),
-      prettyOutput
+      ampOutput
     );
   }
 

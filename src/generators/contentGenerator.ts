@@ -3,9 +3,9 @@ import * as fse from "fs-extra";
 import * as path from "path";
 
 import * as handlebars from "handlebars";
-import marked from "marked";
-import pretty from "pretty";
-import matter from "gray-matter";
+import marked = require("marked");
+import pretty = require("pretty");
+import matter = require("gray-matter");
 
 import registerHbsHelpers from "../hbs-helpers";
 import { loadConfigFile } from "../configHelper";
@@ -55,7 +55,7 @@ export class ContentGenerator {
         this.styles
       );
 
-      this.templateGenerator = new TemplateGenerator();
+      this.templateGenerator = new TemplateGenerator(this.baseTemplateData);
 
       if (this.renderAmpPages) {
         this.ampGenerator = new AmpGenerator(
@@ -72,11 +72,8 @@ export class ContentGenerator {
   public render(sourceDirectory: string, destDirectory: string) {
     this.initialize(sourceDirectory, destDirectory);
 
-    let config = this.baseConfig;
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
-    config = Object.assign(config, sourceDirectoryConfig);
-
-    const templateData = Object.assign({}, this.baseTemplateData, { config });
+    let currentConfig = Object.assign(sourceDirectoryConfig, this.baseConfig);
 
     // TODO: Make this configurable
     // TODO: Cache these compile templates b/c we are doing this in every directory
@@ -84,7 +81,7 @@ export class ContentGenerator {
       path.join(this.layoutsDirectory, this.defaultPageLayout)
     );
 
-    const pages: Array<interfaces.IContentPage> = [];
+    const pages: Array<interfaces.IPageConfig> = [];
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
     const contentFileNames = sourceDirectoryFileNames
       .filter(
@@ -103,20 +100,19 @@ export class ContentGenerator {
         path.join(sourceDirectory, currentFileName)
       );
 
-      const pageContent = this.renderContentFile(
+      const { pageConfig, templateData } = this.renderContentFile(
         currentFileName,
         contentFile,
         applyTemplate,
-        templateData,
-        config,
+        currentConfig,
         destDirectory
       );
 
       if (this.renderAmpPages && this.ampGenerator) {
-        this.ampGenerator.render(pageContent, contentFile, templateData);
+        this.ampGenerator.render(pageConfig, templateData);
       }
 
-      pages.push(pageContent);
+      pages.push(pageConfig);
     }
 
     // Traverse subdirectories and render pages
@@ -136,7 +132,7 @@ export class ContentGenerator {
       this.templateGenerator.render(
         sourceDirectory,
         destDirectory,
-        templateData,
+        currentConfig,
         pages
       );
     }
@@ -148,68 +144,78 @@ export class ContentGenerator {
     currentFileName: string,
     content: interfaces.IContentSource,
     applyTemplate: handlebars.TemplateDelegate<any>,
-    templateData: interfaces.ITemplateData,
-    config: interfaces.IConfig,
+    currentConfig: interfaces.IConfig,
     destDirectory: string
   ) {
-    // Defaults
-    let date = content.data.date;
-
-    // "slug" or "permalink" can be used to specify page slug
-    let slug = content.data.slug || content.data.permalink;
-
-    let title = content.data.title;
-
-    const fileNameMatcher = currentFileName.match(
-      /(\d{4}-\d{2}-\d{2})?[_|-]?(.*).md/
+    const pageConfig: interfaces.IPageConfig = Object.assign(
+      {},
+      currentConfig,
+      content.data // front-mater
     );
-    if (fileNameMatcher != null) {
-      if (!date) {
-        date = fileNameMatcher[1];
-      }
 
-      if (!slug) {
-        slug = fileNameMatcher[2];
+    if (!pageConfig.date || !pageConfig.slug) {
+      // date or slug is not specified so determine from filename
+      const fileNameMatcher = currentFileName.match(
+        /(\d{4}-\d{2}-\d{2})?[_|-]?(.*).md/
+      );
+      if (fileNameMatcher != null) {
+        if (!pageConfig.date) {
+          pageConfig.date = fileNameMatcher[1];
+        }
+
+        if (!pageConfig.slug) {
+          pageConfig.slug = fileNameMatcher[2];
+        }
       }
     }
 
-    if (!title) {
-      // Default page title to file name (slug)
-      title = slug;
+    if (!pageConfig.slug && pageConfig.permalink) {
+      // Honor "permalink" alias for slug
+      pageConfig.slug = pageConfig.permalink;
+    }
+
+    if (!pageConfig.title) {
+      // If page title not available use file name slug
+      pageConfig.title = pageConfig.slug;
     }
 
     const destDirectorRelativeToBase = destDirectory
       .replace(this.baseDestDirectory, "")
       .replace(/^\//, "");
-    const pagePath = path.join(
+
+    // TODO: Make path slug name configurable
+    pageConfig.path = path.join(
       destDirectorRelativeToBase,
-      config.outPath || "",
-      slug
+      currentConfig.base_path || "",
+      pageConfig.slug
     );
-    const pagePathFull = path.join(this.baseDestDirectory, pagePath);
 
-    const ampPath = this.renderAmpPages ? `${pagePath}/amp.html` : null;
-    const page = <interfaces.IContentPage>{
-      date,
-      path: pagePath,
-      path_amp: ampPath,
-      title,
-      excerpt: content.excerpt
-    };
+    if (this.renderAmpPages) {
+      pageConfig.path_amp = `${pageConfig.path}/amp.html`;
+    }
 
-    const templatedOutput = applyTemplate(<interfaces.ITemplateData>(
-      Object.assign({}, templateData, { page }, { content: content.html })
-    ));
-    // TODO: support other variations of config.outPath like :title/ :year/:title
+    // Apply template
+    const templateData = Object.assign(
+      <interfaces.ITemplateData>{},
+      this.baseTemplateData,
+      pageConfig,
+      { content: content.html }
+    );
 
+    let templatedOutput = applyTemplate(templateData);
+    if (this.prettyHtml) {
+      templatedOutput = pretty(templatedOutput, { ocd: true });
+    }
+
+    // Write file
+    const pagePathFull = path.join(this.baseDestDirectory, pageConfig.path);
     fse.emptyDirSync(pagePathFull);
-    const prettyOutput = pretty(templatedOutput, { ocd: true });
     fs.writeFileSync(
       path.join(pagePathFull, this.contentPageName),
-      prettyOutput
+      templatedOutput
     );
 
-    return page;
+    return { pageConfig, templateData };
   }
 
   private readContentFile(filePath: string): interfaces.IContentSource {
@@ -227,7 +233,7 @@ export class ContentGenerator {
       }
     });
 
-    const data = parsedMatter.data;
+    const data = parsedMatter.data as interfaces.IFrontMatter;
     let excerpt = "";
     let html = "";
 
@@ -275,24 +281,9 @@ export class ContentGenerator {
     config: interfaces.IConfig,
     styles: Array<interfaces.IStyle>
   ) {
-    // Render styles and group by name
-    const stylesData: {
-      [partialName: string]: interfaces.IStyle;
-    } = styles.reduce(
-      (
-        root: { [partialName: string]: interfaces.IStyle },
-        current: interfaces.IStyle
-      ) => {
-        root[current.name] = current;
-        return root;
-      },
-      {} as { [partialName: string]: interfaces.IStyle }
-    );
-
-    const templateData = <interfaces.ITemplateData>{
-      config,
-      styles: stylesData
-    };
+    const templateData = Object.assign(<interfaces.ITemplateData>{}, config, {
+      styles
+    });
 
     return templateData;
   }

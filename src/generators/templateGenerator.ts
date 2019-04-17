@@ -1,18 +1,32 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import matter from "gray-matter";
+import pretty from "pretty";
+import matter = require("gray-matter");
 import * as handlebars from "handlebars";
-import { IContentPage, ITemplateData, IPage } from "../interfaces";
+import {
+  IConfig,
+  ITemplateData,
+  IPageConfig,
+  IFrontMatter
+} from "../interfaces";
 
 export class TemplateGenerator {
   readonly extensionsToInclude = ["hbs"];
+  readonly baseTemplateData: ITemplateData;
+
+  // Options
+  readonly prettyHtml = true;
+
+  constructor(baseTemplateData: ITemplateData) {
+    this.baseTemplateData = baseTemplateData;
+  }
 
   public render(
     sourceDirectory: string,
     destDirectory: string,
-    templateData: ITemplateData,
-    pages: Array<IContentPage>
+    currentConfig: IConfig,
+    pages: Array<IPageConfig>
   ) {
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
     const templateFileNamesToDProcess = sourceDirectoryFileNames.filter(f => {
@@ -28,7 +42,7 @@ export class TemplateGenerator {
         sourceDirectory,
         destDirectory,
         currentFileName,
-        templateData,
+        currentConfig,
         pages
       );
     }
@@ -38,24 +52,37 @@ export class TemplateGenerator {
     sourceDirectory: string,
     destDirectory: string,
     currentFileName: string,
-    templateData: ITemplateData,
-    pages: Array<IContentPage>
+    currentConfig: IConfig,
+    pages: Array<IPageConfig>
   ) {
     // TODO: Move this to initializeTemplate but we need it because we need templateContent to extract title
     const { applyTemplate, frontMatter } = this.initializeTemplate(
       path.join(sourceDirectory, currentFileName)
     );
 
-    const page = <IPage>{
-      title: frontMatter.title || ""
-    };
+    // TODO: Parse and use front-matter like we do in content generator
+    const pageConfig: IPageConfig = Object.assign(
+      {},
+      currentConfig,
+      frontMatter as IFrontMatter // front-mater
+    );
 
+    // Apply template
     // TODO: pages seems to be a magic object on template files; should be be standizied into a data container object?
-    const templatedOutput = applyTemplate(<ITemplateData>(
-      Object.assign({}, templateData, { page }, { pages })
-    ));
+    const templateData = Object.assign(
+      <ITemplateData>{},
+      this.baseTemplateData,
+      pageConfig,
+      { pages }
+    );
 
-    // TODO: config outPath is ignored for template files...I think this is ok but need to make obvious
+    let templatedOutput = applyTemplate(templateData);
+    if (this.prettyHtml) {
+      templatedOutput = pretty(templatedOutput, { ocd: true });
+    }
+
+    // Write file
+    // TODO: config base_path is ignored for template files...I think this is ok but need to make obvious.
     const currentFileExtension = path.extname(currentFileName);
     // Remove extension (i.e. foo.html.hbs => foo.html)
     const outFileNmae = currentFileName.replace(currentFileExtension, "");

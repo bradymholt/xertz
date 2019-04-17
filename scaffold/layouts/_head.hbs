@@ -1,19 +1,19 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  {{#if page.title }}
-  <title>{{ page.title }}</title>
+  {{#if title }}
+  <title>{{ title }} | {{ site_name }}</title>
   {{else}}
-  <title>{{ config.title }}</title>   
+  <title>{{ site_name }}</title>   
   {{/if}}
-  <meta name="description" content="{{ page.excerpt }}" />
+  <meta name="description" content="{{ iif excerpt excerpt site_description }}" />
   <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Serif" rel="stylesheet" type="text/css"/>
   <style type="text/css">{{{ styles.default.content }}}</style>
-  <link rel="canonical" href="{{ config.url }}/{{ page.path }}">
+  <link rel="canonical" href="{{ site_url }}/{{ path }}">
   <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
-  <link rel="alternate" type="application/rss+xml" title="{{ config.title }}" href="/{{ config.rss_path }}" />  
-  {{#if page.amp_path }}
-  <link rel="amphtml" href="{{ config.url }}/{{ page.path_amp }}">
+  <link rel="alternate" type="application/rss+xml" title="{{ site_name }}" href="{{ rss_path }}" />  
+  {{#if path_amp }}
+  <link rel="amphtml" href="{{ site_url }}/{{ path_amp }}">
   {{/if}}
 </head>
 
