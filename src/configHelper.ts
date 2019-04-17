@@ -5,8 +5,8 @@ import * as yaml from "js-yaml";
 import { IConfig } from "./interfaces";
 
 export function loadConfigFile(sourceDirectory: string) {
-  const configFile = path.join(sourceDirectory, "_config.yml");
-  if (fse.existsSync(configFile)) {
+  const configFilePath = path.join(sourceDirectory, "_config.yml");
+  if (fse.existsSync(configFilePath)) {
     const configFileContent = fs.readFileSync(
       path.join(sourceDirectory, "_config.yml"),
       "utf-8"

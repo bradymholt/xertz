@@ -4,8 +4,8 @@ import * as path from "path";
 
 jest.mock("fs-extra");
 
-describe("init", function() {
-  it("errors when no targetDirectoryName is provided", function() {
+describe("init", () => {
+  it("errors when no targetDirectoryName is provided", () => {
     const mockError = jest
       .spyOn(console, "error")
       .mockImplementation(((message: string) => null) as any);
@@ -24,7 +24,7 @@ describe("init", function() {
     }
   });
 
-  it("copies scaffold to init destination directory", function() {
+  it("copies scaffold to init destination directory", () => {
     const cwd = process.cwd();
     const destDirectoryName = "fake-dir";
     const cli = init(cwd, ["init", destDirectoryName]);
