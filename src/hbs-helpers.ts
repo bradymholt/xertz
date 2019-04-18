@@ -1,5 +1,6 @@
 import * as handlebars from "handlebars";
-import moment = require("moment");
+import dateformat = require("dateformat");
+import { getCurrentDateInLocalTimezone } from "./dateHelper";
 
 export default function register() {
   handlebars.registerHelper("limit", limit);
@@ -23,6 +24,7 @@ export function ternary(test: boolean, trueValue: any, falseValue: any) {
   return test ? trueValue : falseValue;
 }
 
-export function dateFormat(isoDate: string, format: string) {
-  return moment(isoDate).format(format);
+export function dateFormat(isoDate: string, format: string = "mm/dd/yyyy") {
+  const date = new Date(isoDate);
+  return dateformat(date, "UTC:" + format);
 }

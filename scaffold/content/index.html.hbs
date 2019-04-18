@@ -4,7 +4,7 @@
   <ul class="post-list">
     {{#each (limit (filter pages "type" "post") 10) }}    
     <li>
-      <span class="post-meta">{{ dateFormat this.date "MMM D, YYYY" }}</span>
+      <span class="post-meta">{{ dateFormat this.date "mmmm d, yyyy" }}</span>
       <h2>
         <a class="post-link" href="/{{ this.path }}">{{this.title}}</a>
       </h2>

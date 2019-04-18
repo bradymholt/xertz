@@ -39,8 +39,14 @@ export class TemplateGenerator {
     });
 
     // Sort pages by date descending
-    pages.sort((first, second)=> first.date.localeCompare(second.date));
-    
+    pages.sort((first, second) => {
+      if (first.date && second.date) {
+        return first.date.localeCompare(second.date);
+      } else {
+        return first.title.localeCompare(second.title);
+      }
+    });
+
     for (let currentFileName of templateFileNamesToProcess) {
       this.renderTemplateFile(
         sourceDirectory,
