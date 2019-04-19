@@ -22,6 +22,12 @@
       "program": "${workspaceFolder}/node_modules/.bin/jest",
       "args": ["${relativeFile}"]      
     },
-    
+    {
+      "name": "Test - builder.ts",
+      "type": "node",
+      "request": "launch",      
+      "program": "${workspaceFolder}/node_modules/.bin/jest",
+      "args": ["${workspaceFolder}/tests/builder.test.ts"]      
+    }    
   ]
 }

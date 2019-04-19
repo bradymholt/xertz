@@ -37,8 +37,7 @@ export class Builder {
     let baseConfig = loadConfigFile(this.baseDirectory);
     if (!baseConfig) {
       throw Error(`Config file not found in ${this.baseDirectory}.`);
-    }
-    baseConfig.build_timestamp = getCurrentDateInISOFormat();
+    }    
 
     fse.emptyDirSync(this.distDirectory);
 

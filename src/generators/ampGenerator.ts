@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import pretty from "pretty";
+import pretty = require("pretty");
 import * as handlebars from "handlebars";
 import ampify = require("@bradymholt/ampify");
 

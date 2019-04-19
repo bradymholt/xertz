@@ -8,5 +8,5 @@
     "resolveJsonModule": true,
     "outDir": "_tscOut"
   },
-  "include": ["./**/*.ts"]
+  "include": ["./src/**/*.ts"],  
 }

@@ -6,6 +6,7 @@ import * as handlebars from "handlebars";
 import marked = require("marked");
 import pretty = require("pretty");
 import matter = require("gray-matter");
+import prismjs = require("prismjs");
 
 import registerHbsHelpers from "../hbs-helpers";
 import { loadConfigFile } from "../configHelper";
@@ -24,6 +25,7 @@ export class ContentGenerator {
   // Options
   readonly renderAmpPages = true;
   readonly prettyHtml = true;
+  readonly codeHighlight = true;
 
   initialized = false;
   baseSourceDirectory = "";
@@ -50,7 +52,7 @@ export class ContentGenerator {
       this.baseSourceDirectory = sourceDirectory;
       this.baseDestDirectory = destDirectory;
 
-      this.baseTemplateData = this.buildTemplateData(
+      this.baseTemplateData = this.buildBaseTemplateData(
         this.baseConfig,
         this.styles
       );
@@ -63,6 +65,15 @@ export class ContentGenerator {
           this.baseDestDirectory,
           this.layoutsDirectory
         );
+      }
+
+      if (this.codeHighlight) {
+        //try {
+        // Load all available Prism.js lanagages
+        require("prismjs/components/")(["typescript", "javascript"]);
+        // } catch(err){
+        //   console.log("Error loading Prism.js components: " + err.message);
+        // }
       }
 
       this.initialized = true;
@@ -83,17 +94,12 @@ export class ContentGenerator {
 
     const pages: Array<interfaces.IPageConfig> = [];
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
-    const contentFileNames = sourceDirectoryFileNames
-      .filter(
-        f =>
-          !f.startsWith("_") &&
-          !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
-          this.contentExtensionsToInclude.includes(path.extname(f).substr(1))
-      )
-      // Sort by filename
-      .sort((first: string, second: string) => {
-        return first.localeCompare(second, "en", { numeric: true });
-      });
+    const contentFileNames = sourceDirectoryFileNames.filter(
+      f =>
+        !f.startsWith("_") &&
+        !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
+        this.contentExtensionsToInclude.includes(path.extname(f).substr(1))
+    );
 
     for (let currentFileName of contentFileNames) {
       const contentFile = this.readContentFile(
@@ -112,6 +118,7 @@ export class ContentGenerator {
         this.ampGenerator.render(pageConfig, templateData);
       }
 
+      // templateData contains the content we don't want this to stay in memory
       pages.push(pageConfig);
     }
 
@@ -148,10 +155,17 @@ export class ContentGenerator {
     destDirectory: string
   ) {
     const pageConfig: interfaces.IPageConfig = Object.assign(
-      {},
+      {
+        filename: currentFileName
+      },
       currentConfig,
-      content.data // front-mater
+      content.data // front-mater,
     );
+
+    if (!pageConfig.slug && pageConfig.permalink) {
+      // Honor "permalink" alias for slug
+      pageConfig.slug = pageConfig.permalink;
+    }
 
     if (!pageConfig.date || !pageConfig.slug) {
       // date or slug is not specified so determine from filename
@@ -169,11 +183,6 @@ export class ContentGenerator {
       }
     }
 
-    if (!pageConfig.slug && pageConfig.permalink) {
-      // Honor "permalink" alias for slug
-      pageConfig.slug = pageConfig.permalink;
-    }
-
     if (!pageConfig.title) {
       // If page title not available use file name slug
       pageConfig.title = pageConfig.slug;
@@ -184,14 +193,15 @@ export class ContentGenerator {
       .replace(/^\//, "");
 
     // TODO: Make path slug name configurable
-    pageConfig.path = path.join(
+    const relativeDestinationPath = path.join(
       destDirectorRelativeToBase,
       currentConfig.base_path || "",
       pageConfig.slug
     );
+    pageConfig.path = relativeDestinationPath;
 
     if (this.renderAmpPages) {
-      pageConfig.path_amp = `${pageConfig.path}/amp.html`;
+      pageConfig.path_amp = pageConfig.path + "/amp.html";
     }
 
     // Apply template
@@ -208,10 +218,13 @@ export class ContentGenerator {
     }
 
     // Write file
-    const pagePathFull = path.join(this.baseDestDirectory, pageConfig.path);
-    fse.emptyDirSync(pagePathFull);
+    const destunationPath = path.join(
+      this.baseDestDirectory,
+      relativeDestinationPath
+    );
+    fse.emptyDirSync(destunationPath);
     fs.writeFileSync(
-      path.join(pagePathFull, this.contentPageName),
+      path.join(destunationPath, this.contentPageName),
       templatedOutput
     );
 
@@ -221,40 +234,75 @@ export class ContentGenerator {
   private readContentFile(filePath: string): interfaces.IContentSource {
     const source = fs.readFileSync(filePath, { encoding: "utf-8" });
 
-    const parsedMatter = matter(source, {
-      excerpt: (input: matter.GrayMatterFile<string>, options) => {
-        // Except will be content after front matter and preceeding first line break
-        const trimmedContent = input.content.trim();
-        const indexOfFirstLineBreak = trimmedContent.indexOf("\n");
-        input.excerpt = trimmedContent.substring(
-          0,
-          indexOfFirstLineBreak > -1 ? indexOfFirstLineBreak : undefined
-        );
-      }
-    });
-
+    const parsedMatter = matter(source);
     const data = parsedMatter.data as interfaces.IFrontMatter;
-    let excerpt = "";
     let html = "";
 
     const fileExtension = path.extname(filePath).substr(1);
     switch (fileExtension) {
       case "md":
         // Parse markdown
-        html = marked(parsedMatter.content);
-        if (parsedMatter.excerpt) {
-          excerpt = marked(parsedMatter.excerpt);
-        }
+        html = marked(parsedMatter.content, {
+          smartypants: true,
+          highlight: this.codeHighlight ? this.codeHighlighter : undefined,
+          renderer: this.markedRender()
+        });
         break;
       default:
         throw new Error(`File extension not support: ${fileExtension}`);
     }
 
+    // Extract exceprt as first <p/> if not already specified
+    if (!data.excerpt) {
+      const indexOfFirstParagraph = html.indexOf("<p>");
+      if (indexOfFirstParagraph > -1) {
+        const indexOfEndOfFirstParagraph = html.indexOf(
+          "</p>",
+          indexOfFirstParagraph
+        );
+        if (indexOfEndOfFirstParagraph > -1) {
+          data.excerpt = html.substring(
+            indexOfFirstParagraph + 3,
+            indexOfEndOfFirstParagraph
+          );
+        }
+      }
+    }
+
     return {
       data,
-      html,
-      excerpt
+      html
     };
+  }
+
+  private codeHighlighter(code: string, lang: string) {
+    return prismjs.highlight(
+      code,
+      prismjs.languages[lang] || prismjs.languages.markup,
+      ""
+    );
+  }
+
+  private markedRender() {
+    const renderer = new marked.Renderer();
+    renderer.code = function(
+      code: string,
+      language: string,
+      isEscaped: boolean
+    ) {
+      const options = (<any>this).options;
+      var lang = (language || "markup").match(/\S*/)![0];
+      if (options.highlight) {
+        var out = options.highlight(code, lang);
+        if (out != null && out !== code) {
+          code = out;
+        }
+      }     
+
+      const className = options.langPrefix + lang;
+      return `<pre class="${className}"><code class="${className}">${code}</code></pre>`;
+    };
+    return renderer;
   }
 
   private registerTemplatePartials(layoutsDirectory: string) {
@@ -277,10 +325,24 @@ export class ContentGenerator {
     }
   }
 
-  private buildTemplateData(
+  private buildBaseTemplateData(
     config: interfaces.IConfig,
-    styles: Array<interfaces.IStyle>
+    stylesList: Array<interfaces.IStyle>
   ) {
+    // Structure styles as object (i.e. styles.default.content)
+    const styles: {
+      [partialName: string]: interfaces.IStyle;
+    } = stylesList.reduce(
+      (
+        root: { [partialName: string]: interfaces.IStyle },
+        current: interfaces.IStyle
+      ) => {
+        root[current.name] = current;
+        return root;
+      },
+      {} as { [partialName: string]: interfaces.IStyle }
+    );
+
     const templateData = Object.assign(<interfaces.ITemplateData>{}, config, {
       styles
     });

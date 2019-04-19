@@ -13,9 +13,7 @@
             {{ title }}
           </h1>
           {{#if date }}
-          <h2>
-            {{ date }}
-          </h2>
+            <p class="post-meta">{{ dateFormat this.date "mmmm d, yyyy" }}</p>
           {{/if}}
         </header>
         <article class="post-content">

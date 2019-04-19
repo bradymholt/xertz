@@ -26,7 +26,7 @@ export class RedirectsGenerator {
 
     for (let redirectPath in config.redirects) {
       const output = applyTemplate({ path: config.redirects[redirectPath] });
-      const outFile = path.join(destDirectory, redirectPath);
+      const outFile = path.join(destDirectory, redirectPath, !redirectPath.match(/\.html?/) ? "/index.html" : "");
       fse.ensureFileSync(outFile);
       fs.writeFileSync(outFile, output);
     }

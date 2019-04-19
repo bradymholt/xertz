@@ -6,8 +6,6 @@ export interface IConfig {
   site_author: string;
   base_path?: string;
   redirects: { [source: string]: string };
-
-  build_timestamp: string;
 }
 
 // Config found in .md front-matter
@@ -15,17 +13,19 @@ export interface IFrontMatter {
   title: string;
   description: string;
   date: string;
-  path: string,
+  path: string;
   slug: string;
   type: string;
   excerpt: string;
-  
-  path_amp: string,
-  permalink?: string // alias for "slug"
+
+  permalink?: string; // alias for "slug"
 }
 
 // Config combined with front matter
-export interface IPageConfig extends IConfig, IFrontMatter {}
+export interface IPageConfig extends IConfig, IFrontMatter {
+  filename: string;
+  path_amp?: string;  
+}
 
 // Config that gets passed into the compiled template
 export interface ITemplateData extends IPageConfig {
@@ -35,8 +35,7 @@ export interface ITemplateData extends IPageConfig {
 
 export interface IContentSource {
   data: IFrontMatter;
-  html: string;
-  excerpt: string;
+  html: string;  
 }
 
 export interface IStyle {

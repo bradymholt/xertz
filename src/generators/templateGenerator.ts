@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import pretty from "pretty";
+import pretty = require("pretty");
 import matter = require("gray-matter");
 import * as handlebars from "handlebars";
 import {
@@ -38,13 +38,11 @@ export class TemplateGenerator {
       );
     });
 
-    // Sort pages by date descending
+    // Sort pages by filename
     pages.sort((first, second) => {
-      if (first.date && second.date) {
-        return first.date.localeCompare(second.date);
-      } else {
-        return first.title.localeCompare(second.title);
-      }
+      return second.filename.localeCompare(first.filename, "en", {
+        numeric: true
+      });
     });
 
     for (let currentFileName of templateFileNamesToProcess) {
@@ -72,7 +70,9 @@ export class TemplateGenerator {
 
     // TODO: Parse and use front-matter like we do in content generator
     const pageConfig: IPageConfig = Object.assign(
-      {},
+      {
+        filename: currentFileName
+      },
       currentConfig,
       frontMatter as IFrontMatter // front-mater
     );
