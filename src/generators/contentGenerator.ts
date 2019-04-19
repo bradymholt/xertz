@@ -33,6 +33,8 @@ export class ContentGenerator {
   baseTemplateData: interfaces.ITemplateData | null = null;
   templateGenerator: TemplateGenerator | null = null;
   ampGenerator: AmpGenerator | null = null;
+  readonly markedRender: marked.Renderer;
+  readonly markedHighlighter: ((code: string, lang: string) => string) | null;
 
   constructor(
     baseConfig: interfaces.IConfig,
@@ -42,6 +44,9 @@ export class ContentGenerator {
     this.baseConfig = baseConfig;
     this.styles = styles;
     this.layoutsDirectory = layoutsDirectory;
+
+    this.markedRender = this.getMarkedRender();
+    this.markedHighlighter = this.codeHighlight ? this.prismHighlighter : null;
   }
 
   protected initialize(sourceDirectory: string, destDirectory: string) {
@@ -67,20 +72,11 @@ export class ContentGenerator {
         );
       }
 
-      if (this.codeHighlight) {
-        //try {
-        // Load all available Prism.js lanagages
-        require("prismjs/components/")(["typescript", "javascript"]);
-        // } catch(err){
-        //   console.log("Error loading Prism.js components: " + err.message);
-        // }
-      }
-
       this.initialized = true;
     }
   }
 
-  public render(sourceDirectory: string, destDirectory: string) {
+  public async render(sourceDirectory: string, destDirectory: string) {
     this.initialize(sourceDirectory, destDirectory);
 
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
@@ -115,7 +111,11 @@ export class ContentGenerator {
       );
 
       if (this.renderAmpPages && this.ampGenerator) {
-        this.ampGenerator.render(pageConfig, templateData);
+        try {
+        await this.ampGenerator.render(pageConfig, templateData);
+        } catch (err){
+          console.error(`Error generating AMP file for '${currentFileName}' - ${err}`)
+        }
       }
 
       // templateData contains the content we don't want this to stay in memory
@@ -130,7 +130,7 @@ export class ContentGenerator {
     for (let subDirectoryName of subDirectoryNames) {
       const subDirectorySource = path.join(sourceDirectory, subDirectoryName);
       const subDirectoryDest = path.join(destDirectory, subDirectoryName);
-      const subContent = this.render(subDirectorySource, subDirectoryDest);
+      const subContent = await this.render(subDirectorySource, subDirectoryDest);
       pages.push(...subContent);
     }
 
@@ -186,6 +186,10 @@ export class ContentGenerator {
     if (!pageConfig.title) {
       // If page title not available use file name slug
       pageConfig.title = pageConfig.slug;
+    }
+
+    if (pageConfig.date) {
+      pageConfig.year = pageConfig.date.substr(0, 4);
     }
 
     const destDirectorRelativeToBase = destDirectory
@@ -244,8 +248,8 @@ export class ContentGenerator {
         // Parse markdown
         html = marked(parsedMatter.content, {
           smartypants: true,
-          highlight: this.codeHighlight ? this.codeHighlighter : undefined,
-          renderer: this.markedRender()
+          highlight: this.codeHighlight ? this.prismHighlighter : undefined,
+          renderer: this.markedRender
         });
         break;
       default:
@@ -275,7 +279,19 @@ export class ContentGenerator {
     };
   }
 
-  private codeHighlighter(code: string, lang: string) {
+  private prismHighlighter(code: string, lang: string) {
+    // Translate aliases
+    if (lang == "shell") {
+      lang = "bash";
+    }
+
+    if (!prismjs.languages[lang]) {
+      try {
+        require("prismjs/components/prism-" + lang + ".js");
+      } catch (err) {
+        console.error(`Unable to load Prism language: '${lang}' - ${err}`);
+      }
+    }
     return prismjs.highlight(
       code,
       prismjs.languages[lang] || prismjs.languages.markup,
@@ -283,13 +299,9 @@ export class ContentGenerator {
     );
   }
 
-  private markedRender() {
+  private getMarkedRender() {
     const renderer = new marked.Renderer();
-    renderer.code = function(
-      code: string,
-      language: string,
-      isEscaped: boolean
-    ) {
+    renderer.code = function(code: string, language: string) {
       const options = (<any>this).options;
       var lang = (language || "markup").match(/\S*/)![0];
       if (options.highlight) {
@@ -297,7 +309,7 @@ export class ContentGenerator {
         if (out != null && out !== code) {
           code = out;
         }
-      }     
+      }
 
       const className = options.langPrefix + lang;
       return `<pre class="${className}"><code class="${className}">${code}</code></pre>`;

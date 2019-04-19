@@ -6,6 +6,7 @@ export default function register() {
   handlebars.registerHelper("filter", filter);
   handlebars.registerHelper("iif", ternary);
   handlebars.registerHelper("dateFormat", dateFormat);
+  handlebars.registerHelper("group", group);
 }
 
 export function limit(arr: Array<any>, limit: number) {
@@ -39,4 +40,67 @@ export function dateFormat(dateString: string, format: string = "mm/dd/yyyy") {
     format = "UTC:" + format;
   }
   return dateformat(date, format);
+}
+
+/**
+ * @method group
+ * @param {Array} list
+ * @param {Object} options
+ * @param {Object} options.hash
+ * @param {String} options.hash.by
+ * @return {String} Rendered partial.
+ */
+export function group(list: Array<any>, options: any) {
+  // Source: https://github.com/shannonmoeller/handlebars-group-by
+  function get(obj: any, prop: any) {
+    var parts = prop.split("."),
+      last = parts.pop();
+
+    while ((prop = parts.shift())) {
+      obj = obj[prop];
+
+      if (obj == null) {
+        return;
+      }
+    }
+
+    return obj[last];
+  }
+
+  options = options || {};
+
+  const fn = options.fn,
+    hash = options.hash,
+    prop = hash && hash.by,
+    keys: Array<any> = [],
+    groups: { [name: string]: any } = {};
+
+  if (!prop || !list || !list.length) {
+    return null;
+  }
+
+  function groupKey(item: any) {
+    var key = get(item, prop);
+
+    if (keys.indexOf(key) === -1) {
+      keys.push(key);
+    }
+
+    if (!groups[key]) {
+      groups[key] = {
+        value: key,
+        items: []
+      };
+    }
+
+    groups[key].items.push(item);
+  }
+
+  function renderGroup(buffer: any, key: string) {
+    return buffer + fn(groups[key]);
+  }
+
+  list.forEach(groupKey);
+
+  return keys.reduce(renderGroup, "");
 }

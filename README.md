@@ -4,8 +4,8 @@ Static site generator with first-class support for markdown and Handlebars templ
 
 ## Features
 
-- Build in support for AMP
-- Beautifying HTML
+- Built in support for AMP
+- Beautifying HTML via pretty
 - Code Highligting via Prism.js
 - Style content available in templates
 - Supports SaSS

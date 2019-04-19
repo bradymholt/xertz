@@ -33,7 +33,7 @@ export class Builder {
     this.distDirectory = path.join(this.baseDirectory, this.distDirectoryName);
   }
 
-  start() {
+  async start() {
     let baseConfig = loadConfigFile(this.baseDirectory);
     if (!baseConfig) {
       throw Error(`Config file not found in ${this.baseDirectory}.`);
@@ -56,7 +56,7 @@ export class Builder {
       styles,
       this.layoutsDirectory
     );
-    contentGenerator.render(this.contentDirectory, this.distDirectory);
+    await contentGenerator.render(this.contentDirectory, this.distDirectory);
 
     // Redirects - create redirect pages
     const redirectGenerator = new RedirectsGenerator();

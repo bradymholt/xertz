@@ -17,16 +17,12 @@ class cli {
   cwd: string;
   args: Array<string>;
 
-  constructor(
-    cwd: string,
-    args: Array<string>,
-    logger: (text: string) => void = console.log
-  ) {
+  constructor(cwd: string, args: Array<string>) {
     this.cwd = cwd;
     this.args = args;
   }
 
-  run() {
+  async run() {
     console.log(`${pkg.name} - Version: ${pkg.version}`);
 
     this.watchSignal();
@@ -38,7 +34,7 @@ class cli {
         this.init(this.args[1]);
         break;
       case "build":
-        this.build(this.args[1] || ".");
+        await this.build(this.args[1] || ".");
         break;
       case "serve":
         this.serve(this.args[1]);
@@ -90,8 +86,9 @@ class cli {
     process.exit();
   }
 
-  build(sourceDirectory: string) {
-    new Builder(path.join(this.cwd, sourceDirectory)).start();
+  async build(sourceDirectory: string) {
+    const builder = new Builder(path.join(this.cwd, sourceDirectory));
+    await builder.start();
     console.log(`Success!`);
     process.exit();
   }

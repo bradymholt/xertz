@@ -13,6 +13,7 @@ export interface IFrontMatter {
   title: string;
   description: string;
   date: string;
+  year: string;
   path: string;
   slug: string;
   type: string;
