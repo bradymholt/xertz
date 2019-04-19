@@ -1,6 +1,6 @@
 {
-  "name": "amplog",
-  "version": "1.0.0",
+  "name": "@bradymholt/amplog",
+  "version": "0.1.0",
   "description": "amplog",
   "main": "index.js",
   "bin": "bin/start.js",
