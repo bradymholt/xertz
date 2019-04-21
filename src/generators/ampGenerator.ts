@@ -32,10 +32,7 @@ export class AmpGenerator {
     );
   }
 
-  public async render(
-    page: IPageConfig,
-    templateData: ITemplateData
-  ) {
+  public async render(page: IPageConfig, templateData: ITemplateData) {
     const templatedOutput = this.applyTemplate(templateData);
 
     let ampOutput = await ampify(templatedOutput, {
