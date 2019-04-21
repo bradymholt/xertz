@@ -164,7 +164,7 @@ export class ContentGenerator {
         filename: currentFileName
       },
       currentConfig,
-      content.data // front-mater,
+      content.data // front-matter,
     );
 
     if (!pageConfig.slug && pageConfig.permalink) {
@@ -205,12 +205,13 @@ export class ContentGenerator {
     const relativeDestinationPath = path.join(
       destDirectorRelativeToBase,
       currentConfig.base_path || "",
-      pageConfig.slug
+      pageConfig.slug,
+      "/"
     );
     pageConfig.path = relativeDestinationPath;
 
     if (this.renderAmpPages) {
-      pageConfig.path_amp = pageConfig.path + "/amp.html";
+      pageConfig.path_amp = pageConfig.path + "amp.html";
     }
 
     // Apply template
