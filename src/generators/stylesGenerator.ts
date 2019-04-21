@@ -34,7 +34,6 @@ export class StylesGenerator {
       const fileName = path.parse(currentFile).name;
       const outFileName = `${fileName}.${this.outFileExtension}`;
 
-      fse.emptyDirSync(destDirectory);
       fs.writeFileSync(path.join(destDirectory, outFileName), content);
 
       // TODO: Also include path to rendered file
