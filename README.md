@@ -1,4 +1,4 @@
-# amplog
+# xertz
 
 Static site generator with first-class support for markdown and Handlebars templates
 

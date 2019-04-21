@@ -1,10 +1,10 @@
 {
-  "name": "@bradymholt/amplog",
-  "version": "0.4.0",
+  "name": "xertz",
+  "version": "0.1.0",
   "publishConfig": {
     "access": "public"
   },
-  "description": "amplog",
+  "description": "xertz",
   "main": "index.js",
   "bin": "bin/start.js",
   "scripts": {
