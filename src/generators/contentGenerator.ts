@@ -112,9 +112,11 @@ export class ContentGenerator {
 
       if (this.renderAmpPages && this.ampGenerator) {
         try {
-        await this.ampGenerator.render(pageConfig, templateData);
-        } catch (err){
-          console.error(`Error generating AMP file for '${currentFileName}' - ${err}`)
+          await this.ampGenerator.render(pageConfig, templateData);
+        } catch (err) {
+          console.error(
+            `Error generating AMP file for '${currentFileName}' - ${err}`
+          );
         }
       }
 
@@ -130,7 +132,10 @@ export class ContentGenerator {
     for (let subDirectoryName of subDirectoryNames) {
       const subDirectorySource = path.join(sourceDirectory, subDirectoryName);
       const subDirectoryDest = path.join(destDirectory, subDirectoryName);
-      const subContent = await this.render(subDirectorySource, subDirectoryDest);
+      const subContent = await this.render(
+        subDirectorySource,
+        subDirectoryDest
+      );
       pages.push(...subContent);
     }
 
