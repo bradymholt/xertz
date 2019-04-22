@@ -2,7 +2,7 @@ import { Builder } from "./builder";
 import * as path from "path";
 import * as fse from "fs-extra";
 import express = require("express");
-import * as pkg from "../package.json";
+import pkg from "../package.json";
 import { getCurrentDateInISOFormat } from "./dateHelper";
 
 export function init(cwd: string, args: Array<string>) {

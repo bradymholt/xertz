@@ -8,8 +8,9 @@
   "main": "index.js",
   "bin": "bin/start.js",
   "scripts": {
-    "start": "./bin/start.js build ./scaffold",
-    "test": "jest"
+    "build_scaffold": "npx ts-node --files ./bin/start.ts build scaffold",
+    "test": "npx jest",
+    "prepublishOnly": "tsc"
   },
   "author": "Brady Holt",
   "license": "MIT",
@@ -34,7 +35,8 @@
     "node-sass": "^4.11.0",
     "pretty": "^2.0.0",
     "prismjs": "^1.16.0",
-    "ts-node": "^8.1.0"
+    "ts-node": "^8.1.0",
+    "typescript": "^3.4.4"
   },
   "devDependencies": {
     "@types/jest": "^24.0.11",
