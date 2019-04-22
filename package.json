@@ -10,7 +10,7 @@
   "main": "index.js",
   "bin": "bin/start.js",
   "files": [
-    "bin/",
+    "bin/**/*.js",
     "dist/"
   ],
   "scripts": {
