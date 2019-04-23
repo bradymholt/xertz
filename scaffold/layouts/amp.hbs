@@ -2,8 +2,8 @@
 <html amp lang="en">
 <head>
     <meta charset="utf-8">
-    <title>{{ title }}</title>
-    <link rel="canonical" href="{{ site_url }}/{{ path }}" />
+    <title>{{title}}</title>
+    <link rel="canonical" href="{{site_url}}/{{path}}" />
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
     <link href='https://fonts.googleapis.com/css?family=Poly' rel='stylesheet'>
     <style amp-custom>       
@@ -17,17 +17,17 @@
 </head>
 
 <body>
-    {{> header }}
+    {{> header}}
     <h1 class="post-title">
-        {{ title }}
+        {{title}}
     </h1>
     <div class="post-content">
       <span>
-          <i>{{ date }}</i>
+          <i>{{date}}</i>
       </span>
-      {{{ content }}}
+      {{{content}}}
     </div>
-    {{> footer }}
+    {{> footer}}
     <amp-analytics type="googleanalytics">
         <script type="application/json">
         { "vars": {
