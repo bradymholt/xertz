@@ -8,7 +8,6 @@ import { getCurrentDateInISOFormat } from "./dateHelper";
 import { StylesGenerator } from "./generators/stylesGenerator";
 import { AssetGenerator } from "./generators/assetGenerator";
 import { ContentGenerator } from "./generators/contentGenerator";
-import { RedirectsGenerator } from "./generators/redirectsGenerator";
 
 export class Builder {
   readonly baseDirectory: string;
@@ -57,13 +56,5 @@ export class Builder {
       this.layoutsDirectory
     );
     await contentGenerator.render(this.contentDirectory, this.distDirectory);
-
-    // Redirects - create redirect pages
-    const redirectGenerator = new RedirectsGenerator();
-    redirectGenerator.render(
-      baseConfig,
-      this.distDirectory,
-      this.layoutsDirectory
-    );
   }
 }
