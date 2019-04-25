@@ -2,25 +2,22 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 
-import * as handlebars from "handlebars";
 import marked = require("marked");
 import pretty = require("pretty");
 import matter = require("gray-matter");
 import prismjs = require("prismjs");
 
-import registerHbsHelpers from "../hbs-helpers";
 import { loadConfigFile } from "../configHelper";
 import * as interfaces from "../interfaces";
 import { TemplateGenerator } from "./templateGenerator";
 import { AmpGenerator } from "./ampGenerator";
+import { TemplateManager } from "../templateManager";
 
 export class ContentGenerator {
   readonly baseConfig: interfaces.IConfig;
-  readonly layoutsDirectory: string;
   readonly styles: Array<interfaces.IStyle>;
   readonly contentPageName = "index.html";
   readonly contentExtensionsToInclude = ["md"];
-  readonly defaultPageLayout = "page.hbs";
 
   // Options
   readonly renderAmpPages = true;
@@ -30,9 +27,11 @@ export class ContentGenerator {
   initialized = false;
   baseSourceDirectory = "";
   baseDestDirectory = "";
+
   baseTemplateData: interfaces.ITemplateData | null = null;
   templateGenerator: TemplateGenerator | null = null;
   ampGenerator: AmpGenerator | null = null;
+  readonly templateManager: TemplateManager;
   readonly markedRender: marked.Renderer;
   readonly markedHighlighter: ((code: string, lang: string) => string) | null;
 
@@ -43,17 +42,14 @@ export class ContentGenerator {
   ) {
     this.baseConfig = baseConfig;
     this.styles = styles;
-    this.layoutsDirectory = layoutsDirectory;
 
+    this.templateManager = new TemplateManager(layoutsDirectory);
     this.markedRender = this.getMarkedRender();
     this.markedHighlighter = this.codeHighlight ? this.prismHighlighter : null;
   }
 
   protected initialize(sourceDirectory: string, destDirectory: string) {
     if (!this.initialized) {
-      this.registerTemplatePartials(this.layoutsDirectory);
-      registerHbsHelpers();
-
       this.baseSourceDirectory = sourceDirectory;
       this.baseDestDirectory = destDirectory;
 
@@ -62,13 +58,16 @@ export class ContentGenerator {
         this.styles
       );
 
-      this.templateGenerator = new TemplateGenerator(this.baseTemplateData);
+      this.templateGenerator = new TemplateGenerator(
+        this.baseTemplateData,
+        this.templateManager
+      );
 
       if (this.renderAmpPages) {
         this.ampGenerator = new AmpGenerator(
           this.baseSourceDirectory,
           this.baseDestDirectory,
-          this.layoutsDirectory
+          this.templateManager
         );
       }
 
@@ -81,12 +80,6 @@ export class ContentGenerator {
 
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
     let currentConfig = Object.assign(sourceDirectoryConfig, this.baseConfig);
-
-    // TODO: Make this configurable
-    // TODO: Cache these compile templates b/c we are doing this in every directory
-    const applyTemplate = this.initializeTemplate(
-      path.join(this.layoutsDirectory, this.defaultPageLayout)
-    );
 
     const pages: Array<interfaces.IPageConfig> = [];
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
@@ -105,7 +98,6 @@ export class ContentGenerator {
       const { pageConfig, templateData } = this.renderContentFile(
         currentFileName,
         contentFile,
-        applyTemplate,
         currentConfig,
         destDirectory
       );
@@ -155,7 +147,6 @@ export class ContentGenerator {
   private renderContentFile(
     currentFileName: string,
     content: interfaces.IContentSource,
-    applyTemplate: handlebars.TemplateDelegate<any>,
     currentConfig: interfaces.IConfig,
     destDirectory: string
   ) {
@@ -222,6 +213,9 @@ export class ContentGenerator {
       { content: content.html }
     );
 
+    const applyTemplate = this.templateManager.getTemplate(
+      pageConfig.layout || "default"
+    );
     let templatedOutput = applyTemplate(templateData);
     if (this.prettyHtml) {
       templatedOutput = pretty(templatedOutput, { ocd: true });
@@ -323,26 +317,6 @@ export class ContentGenerator {
     return renderer;
   }
 
-  private registerTemplatePartials(layoutsDirectory: string) {
-    // TODO: support partials in subdirectories
-    const templatePartialsFiles = fs
-      .readdirSync(layoutsDirectory)
-      .filter(f => f.endsWith(".hbs"));
-
-    for (let fileName of templatePartialsFiles) {
-      const templateContent = fs.readFileSync(
-        path.join(layoutsDirectory, fileName),
-        { encoding: "utf-8" }
-      );
-
-      let templateName = path.parse(fileName).name;
-      if (templateName.startsWith("_")) {
-        templateName = templateName.substr(1);
-      }
-      handlebars.registerPartial(templateName, templateContent);
-    }
-  }
-
   private buildBaseTemplateData(
     config: interfaces.IConfig,
     stylesList: Array<interfaces.IStyle>
@@ -366,13 +340,5 @@ export class ContentGenerator {
     });
 
     return templateData;
-  }
-
-  private initializeTemplate(templateFile: string) {
-    const templateContent = fs.readFileSync(templateFile, {
-      encoding: "utf-8"
-    });
-    const applyTemplate = handlebars.compile(templateContent);
-    return applyTemplate;
   }
 }

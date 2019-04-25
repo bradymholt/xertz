@@ -18,6 +18,7 @@ export interface IFrontMatter {
   slug: string;
   type: string;
   excerpt: string;
+  layout: string;
 
   permalink?: string; // alias for "slug"
 }

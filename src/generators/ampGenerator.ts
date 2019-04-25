@@ -6,34 +6,32 @@ import * as handlebars from "handlebars";
 import ampify = require("@bradymholt/ampify");
 
 import { ITemplateData, IPageConfig } from "../interfaces";
+import { TemplateManager } from "../templateManager";
 
 export class AmpGenerator {
   readonly ampPageName = "amp.html";
-  readonly ampLayout = "amp.hbs";
+  readonly ampLayout = "amp";
 
   // Options
   readonly prettyHtml = true;
 
   readonly baseSourceDirectory: string;
   readonly baseDestDirectory: string;
-
-  readonly applyTemplate: handlebars.TemplateDelegate<any>;
+  readonly templateManager: TemplateManager;
 
   constructor(
     baseSourceDirectory: string,
     baseDestDirectory: string,
-    layoutsDirectory: string
+    templateManager: TemplateManager
   ) {
     this.baseSourceDirectory = baseSourceDirectory;
     this.baseDestDirectory = baseDestDirectory;
-
-    this.applyTemplate = this.initializeTemplate(
-      path.join(layoutsDirectory, this.ampLayout)
-    );
+    this.templateManager = templateManager;
   }
 
   public async render(page: IPageConfig, templateData: ITemplateData) {
-    const templatedOutput = this.applyTemplate(templateData);
+    const applyTemplate = this.templateManager.getTemplate(this.ampLayout);
+    const templatedOutput = applyTemplate(templateData);
 
     let ampOutput = await ampify(templatedOutput, {
       cwd: this.baseSourceDirectory.replace(/\/$/, "")
