@@ -4,7 +4,7 @@ import dateformat = require("dateformat");
 export default function register() {
   handlebars.registerHelper("limit", limit);
   handlebars.registerHelper("filter", filter);
-  handlebars.registerHelper("iif", ternary);
+  handlebars.registerHelper("iif", iif);
   handlebars.registerHelper("dateFormat", dateFormat);
   handlebars.registerHelper("group", group);
 }
@@ -20,8 +20,8 @@ export function filter(arr: Array<any>, key: string, val: any) {
   return arr.filter(i => i[key] == val);
 }
 
-export function ternary(test: boolean, trueValue: any, falseValue: any) {
-  return test ? trueValue : falseValue;
+export function iif(testValue: any, falsyValue: any) {
+  return testValue ? testValue : falsyValue;
 }
 
 /**
