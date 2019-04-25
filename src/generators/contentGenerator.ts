@@ -3,7 +3,7 @@ import * as fse from "fs-extra";
 import * as path from "path";
 
 import marked = require("marked");
-import pretty = require("pretty");
+import { minify } from "html-minifier";
 import matter = require("gray-matter");
 import prismjs = require("prismjs");
 
@@ -21,7 +21,7 @@ export class ContentGenerator {
 
   // Options
   readonly renderAmpPages = true;
-  readonly prettyHtml = true;
+  readonly minifyHtml = true;
   readonly codeHighlight = true;
 
   initialized = false;
@@ -217,8 +217,12 @@ export class ContentGenerator {
       pageConfig.layout || "default"
     );
     let templatedOutput = applyTemplate(templateData);
-    if (this.prettyHtml) {
-      templatedOutput = pretty(templatedOutput, { ocd: true });
+    if (this.minifyHtml) {
+      templatedOutput = minify(templatedOutput, {
+        minifyJS: false,
+        collapseWhitespace: false,
+        processConditionalComments: false
+      });
     }
 
     // Write file

@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import pretty = require("pretty");
+import { minify } from "html-minifier";
 import * as handlebars from "handlebars";
 import ampify = require("@bradymholt/ampify");
 
@@ -38,7 +38,12 @@ export class AmpGenerator {
     });
 
     if (this.prettyHtml) {
-      ampOutput = pretty(ampOutput, { ocd: true });
+      // TODO: DRY up minify options
+      ampOutput = minify(ampOutput, {
+        minifyJS: false,
+        collapseWhitespace: false,
+        processConditionalComments: false
+      });
     }
 
     fs.writeFileSync(

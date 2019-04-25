@@ -1,9 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import pretty = require("pretty");
+import { minify } from "html-minifier";
 import matter = require("gray-matter");
-import * as handlebars from "handlebars";
 import {
   IConfig,
   ITemplateData,
@@ -18,7 +17,7 @@ export class TemplateGenerator {
   readonly templateManager: TemplateManager;
 
   // Options
-  readonly prettyHtml = true;
+  readonly minifyHtml = true;
 
   constructor(
     baseTemplateData: ITemplateData,
@@ -114,7 +113,11 @@ export class TemplateGenerator {
       );
     }
 
-    templateLayoutOutput = pretty(templateLayoutOutput, { ocd: true });
+    templateLayoutOutput = minify(templateLayoutOutput, {
+      minifyJS: false,
+      collapseWhitespace: false,
+      processConditionalComments: false
+    });
 
     // Write file
     // TODO: config base_path is ignored for template files...I think this is ok but need to make obvious.
