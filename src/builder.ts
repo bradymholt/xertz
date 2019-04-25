@@ -13,7 +13,7 @@ export class Builder {
   readonly baseDirectory: string;
   readonly contentDirectoryName = "content";
   readonly layoutsDirectoryName = "layouts";
-  readonly distDirectoryName = "dist";
+  readonly distDirectoryName = "_dist";
 
   readonly contentDirectory: string;
   readonly layoutsDirectory: string;
