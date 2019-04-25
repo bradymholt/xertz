@@ -5,7 +5,6 @@ export interface IConfig {
   site_url: string;
   site_author: string;
   base_path?: string;
-  redirects: { [source: string]: string };
 }
 
 // Config found in .md front-matter
