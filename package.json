@@ -19,7 +19,7 @@
     "prepublishOnly": "tsc"
   },
   "dependencies": {
-    "@bradymholt/ampify": "^1.0.0",
+    "@bradymholt/ampify": "^1.1.0",
     "dateformat": "^3.0.3",
     "express": "^4.16.4",
     "fs-extra": "^7.0.1",
