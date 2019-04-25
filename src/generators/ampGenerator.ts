@@ -13,7 +13,7 @@ export class AmpGenerator {
   readonly ampLayout = "amp";
 
   // Options
-  readonly prettyHtml = true;
+  readonly minifyHtml = true;
 
   readonly baseSourceDirectory: string;
   readonly baseDestDirectory: string;
@@ -37,7 +37,7 @@ export class AmpGenerator {
       cwd: this.baseSourceDirectory.replace(/\/$/, "")
     });
 
-    if (this.prettyHtml) {
+    if (this.minifyHtml) {
       // TODO: DRY up minify options
       ampOutput = minify(ampOutput, {
         minifyJS: false,

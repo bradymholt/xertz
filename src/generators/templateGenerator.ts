@@ -68,6 +68,7 @@ export class TemplateGenerator {
     currentConfig: IConfig,
     pages: Array<IPageConfig>
   ) {
+    const isHtmlFile = currentFileName.match(/\.html?/) != null;
     const source = fs.readFileSync(
       path.join(sourceDirectory, currentFileName),
       { encoding: "utf-8" }
@@ -97,7 +98,7 @@ export class TemplateGenerator {
     const templatePartialOutput = templatePartial(templateData);
 
     let layout = pageConfig.layout;
-    if (!layout && currentFileName.match(/\.html?/) != null) {
+    if (!layout && isHtmlFile) {
       // If layout not specified and the filename has .htm(l) in it we will use the default template
       layout = "default";
     }
@@ -113,11 +114,13 @@ export class TemplateGenerator {
       );
     }
 
-    templateLayoutOutput = minify(templateLayoutOutput, {
-      minifyJS: false,
-      collapseWhitespace: false,
-      processConditionalComments: false
-    });
+    if (isHtmlFile && this.minifyHtml) {
+      templateLayoutOutput = minify(templateLayoutOutput, {
+        minifyJS: false,
+        collapseWhitespace: false,
+        processConditionalComments: false
+      });
+    }
 
     // Write file
     // TODO: config base_path is ignored for template files...I think this is ok but need to make obvious.
