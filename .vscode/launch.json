@@ -11,23 +11,23 @@
     {
       "name": "Test - All",
       "type": "node",
-      "request": "launch",      
+      "request": "launch",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "args": ["--runInBand"]      
+      "args": ["--runInBand"]
     },
     {
       "name": "Test - Current File",
       "type": "node",
-      "request": "launch",      
+      "request": "launch",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "args": ["${relativeFile}"]      
+      "args": ["${relativeFile}"]
     },
     {
       "name": "Test - builder.ts",
       "type": "node",
-      "request": "launch",      
+      "request": "launch",
       "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "args": ["${workspaceFolder}/tests/builder.test.ts"]      
-    }    
+      "args": ["${workspaceFolder}/tests/builder.test.ts"]
+    }
   ]
 }
