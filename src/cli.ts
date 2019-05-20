@@ -82,26 +82,28 @@ class cli {
       )
     );
 
-    console.log(`Done!  Start blogging with ${pkg.name}.`);
+    console.log(`INIT: Done! Start blogging with ${pkg.name}.`);
     process.exit();
   }
 
-  async build(sourceDirectory: string) {
+  async build(sourceDirectory: string, exit = true) {
     const builder = new Builder(path.join(this.cwd, sourceDirectory));
     await builder.start();
-    console.log(`Success!`);
-    process.exit();
+    console.log(`BUILD: Success!`);
+    if (exit) {
+      process.exit();
+    }
   }
 
   serve(preferredPortNumber: string) {
-    this.build(".");
+    this.build(".", false);
 
     const expressApp = express();
-    expressApp.use(express.static(path.join(this.cwd, "dist")));
+    expressApp.use(express.static(path.join(this.cwd, Builder.distDirectoryName)));
     const portNumber = Number(preferredPortNumber) || 8080;
     expressApp.listen(portNumber);
 
-    console.log(`Listening on http://localhost:${portNumber}`);
+    console.log(`SERVE: Listening on http://localhost:${portNumber}`);
   }
   printHelp() {
     console.log(`\

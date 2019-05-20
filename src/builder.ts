@@ -9,10 +9,11 @@ import { AssetGenerator } from "./generators/assetGenerator";
 import { ContentGenerator } from "./generators/contentGenerator";
 
 export class Builder {
+  public static readonly distDirectoryName = "_dist";
+
   readonly baseDirectory: string;
   readonly contentDirectoryName = "content";
   readonly layoutsDirectoryName = "layouts";
-  readonly distDirectoryName = "_dist";
 
   readonly contentDirectory: string;
   readonly layoutsDirectory: string;
@@ -28,7 +29,7 @@ export class Builder {
       this.baseDirectory,
       this.layoutsDirectoryName
     );
-    this.distDirectory = path.join(this.baseDirectory, this.distDirectoryName);
+    this.distDirectory = path.join(this.baseDirectory, Builder.distDirectoryName);
   }
 
   async start() {
