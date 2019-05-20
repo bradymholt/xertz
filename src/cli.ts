@@ -1,6 +1,7 @@
 import { Builder } from "./builder";
 import * as path from "path";
 import * as fse from "fs-extra";
+import * as chokidar from "chokidar";
 import express = require("express");
 import pkg from "../package.json";
 import { getCurrentDateInISOFormat } from "./dateHelper";
@@ -88,6 +89,7 @@ class cli {
 
   async build(sourceDirectory: string, exit = true) {
     const builder = new Builder(path.join(this.cwd, sourceDirectory));
+    console.log(`BUILD: Start`);
     await builder.start();
     console.log(`BUILD: Success!`);
     if (exit) {
@@ -98,8 +100,17 @@ class cli {
   async serve(preferredPortNumber: string) {
     await this.build(".", false);
 
+    const contentFolder = path.join(this.cwd, Builder.contentDirectoryName);
+    chokidar
+      .watch(contentFolder, { ignoreInitial: true })
+      .on("all", (event, path) => {
+        console.log(`SERVE: Changed Detected`);
+        this.build(".", false);
+      });
+
     const expressApp = express();
-    expressApp.use(express.static(path.join(this.cwd, Builder.distDirectoryName)));
+    const distFolder = path.join(this.cwd, Builder.distDirectoryName);
+    expressApp.use(express.static(distFolder));
     const portNumber = Number(preferredPortNumber) || 8080;
     expressApp.listen(portNumber);
 

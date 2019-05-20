@@ -10,9 +10,9 @@ import { ContentGenerator } from "./generators/contentGenerator";
 
 export class Builder {
   public static readonly distDirectoryName = "_dist";
+  public static readonly contentDirectoryName = "content";
 
   readonly baseDirectory: string;
-  readonly contentDirectoryName = "content";
   readonly layoutsDirectoryName = "layouts";
 
   readonly contentDirectory: string;
@@ -23,20 +23,23 @@ export class Builder {
     this.baseDirectory = baseDirectory;
     this.contentDirectory = path.join(
       this.baseDirectory,
-      this.contentDirectoryName
+      Builder.contentDirectoryName
     );
     this.layoutsDirectory = path.join(
       this.baseDirectory,
       this.layoutsDirectoryName
     );
-    this.distDirectory = path.join(this.baseDirectory, Builder.distDirectoryName);
+    this.distDirectory = path.join(
+      this.baseDirectory,
+      Builder.distDirectoryName
+    );
   }
 
   async start() {
     let baseConfig = loadConfigFile(this.baseDirectory);
     if (!baseConfig) {
       throw Error(`Config file not found in ${this.baseDirectory}.`);
-    }    
+    }
 
     fse.emptyDirSync(this.distDirectory);
 
