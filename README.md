@@ -7,7 +7,6 @@ xertz is a static site generator with first-class support for Markdown and Handl
 ## Features
 
 - Built in support for AMP
-- Beautifying HTML via pretty
 - Code Highligting via Prism.js
 - Style content available in templates
 - Supports SaSS
