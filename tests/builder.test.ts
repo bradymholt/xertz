@@ -19,7 +19,7 @@ describe("start", () => {
     );
     new Builder(dest).start();
 
-    const aboutMeContent = fs.readFileSync(path.join(dest, "dist/about-me/index.html"), { encoding: "utf-8"});
-    expect(aboutMeContent.includes("Hello there. My name is Brady Holt and I like to blog.")).toBeTruthy();
+    const aboutMeContent = fs.readFileSync(path.join(dest, "_dist/about-me/index.html"), { encoding: "utf-8"});
+    expect(aboutMeContent.includes("Hello there.  My name is Brady Holt and I like to blog.")).toBeTruthy();
   });
 });

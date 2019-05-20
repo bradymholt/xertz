@@ -3,7 +3,6 @@ import * as path from "path";
 
 import { IStyle } from "./interfaces";
 import { loadConfigFile } from "./configHelper";
-import { getCurrentDateInISOFormat } from "./dateHelper";
 
 import { StylesGenerator } from "./generators/stylesGenerator";
 import { AssetGenerator } from "./generators/assetGenerator";

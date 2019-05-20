@@ -1,5 +1,5 @@
 import * as handlebars from "handlebars";
-import dateformat = require("dateformat");
+import dateformat from "dateformat";
 
 export default function register() {
   handlebars.registerHelper("limit", limit);

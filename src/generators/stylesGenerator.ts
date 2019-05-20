@@ -1,8 +1,6 @@
 import * as fs from "fs";
-import * as fse from "fs-extra";
 import * as path from "path";
 import * as sass from "node-sass";
-import { Options } from "node-sass";
 import { IStyle } from "../interfaces";
 
 export class StylesGenerator {

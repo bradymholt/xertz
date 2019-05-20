@@ -1,9 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { minify } from "html-minifier";
 import * as handlebars from "handlebars";
-import ampify = require("@bradymholt/ampify");
+import ampify from "@bradymholt/ampify";
 
 import { ITemplateData, IPageConfig } from "../interfaces";
 import { TemplateManager } from "../templateManager";
@@ -13,8 +12,7 @@ export class AmpGenerator {
   readonly ampLayout = "amp";
 
   // Options
-  readonly minifyHtml = true;
-
+  
   readonly baseSourceDirectory: string;
   readonly baseDestDirectory: string;
   readonly templateManager: TemplateManager;
@@ -35,16 +33,7 @@ export class AmpGenerator {
 
     let ampOutput = await ampify(templatedOutput, {
       cwd: this.baseSourceDirectory.replace(/\/$/, "")
-    });
-
-    if (this.minifyHtml) {
-      // TODO: DRY up minify options
-      ampOutput = minify(ampOutput, {
-        minifyJS: false,
-        collapseWhitespace: false,
-        processConditionalComments: false
-      });
-    }
+    });   
 
     fs.writeFileSync(
       path.join(this.baseDestDirectory, page.path, this.ampPageName),

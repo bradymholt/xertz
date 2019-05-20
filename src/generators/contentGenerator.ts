@@ -2,10 +2,9 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 
-import marked = require("marked");
-import { minify } from "html-minifier";
-import matter = require("gray-matter");
-import prismjs = require("prismjs");
+import marked  from "marked";
+import matter from "gray-matter";
+import prismjs from "prismjs";
 
 import { loadConfigFile } from "../configHelper";
 import * as interfaces from "../interfaces";
@@ -20,8 +19,7 @@ export class ContentGenerator {
   readonly contentExtensionsToInclude = ["md"];
 
   // Options
-  readonly renderAmpPages = true;
-  readonly minifyHtml = true;
+  readonly renderAmpPages = true;  
   readonly codeHighlight = true;
 
   initialized = false;
@@ -217,14 +215,7 @@ export class ContentGenerator {
       pageConfig.layout || "default"
     );
     let templatedOutput = applyTemplate(templateData);
-    if (this.minifyHtml) {
-      templatedOutput = minify(templatedOutput, {
-        minifyJS: false,
-        collapseWhitespace: false,
-        processConditionalComments: false
-      });
-    }
-
+  
     // Write file
     const destunationPath = path.join(
       this.baseDestDirectory,
