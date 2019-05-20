@@ -95,8 +95,8 @@ class cli {
     }
   }
 
-  serve(preferredPortNumber: string) {
-    this.build(".", false);
+  async serve(preferredPortNumber: string) {
+    await this.build(".", false);
 
     const expressApp = express();
     expressApp.use(express.static(path.join(this.cwd, Builder.distDirectoryName)));
