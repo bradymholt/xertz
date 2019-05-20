@@ -1,6 +1,6 @@
 # xertz
 
-> Pronounced ‘zerts’, it means ‘to gulp something down quickly and/or in a greedy fashion’.
+> Pronounced ‘zerts’, it means to gulp something down quickly and/or in a greedy fashion
 
 xertz is a static site generator with first-class support for Markdown and Handlebars templates
 
