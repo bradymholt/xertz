@@ -1,6 +1,8 @@
 # xertz
 
-Static site generator with first-class support for markdown and Handlebars templates
+> Pronounced ‘zerts’, it means to gulp something down quickly and/or in a greedy fashion
+
+xertz is a static site generator with first-class support for Markdown and Handlebars templates
 
 ## Features
 
@@ -12,16 +14,18 @@ Static site generator with first-class support for markdown and Handlebars templ
 
 ## Content Files
 
+- TODO
+
 ### Config
 
-### Front Mater
-
-- defaults
+- TODO
 
 ## Layouts
 
 - Files prefixes with _ are not processed
+- TODO
 
 ## Template Helpers
 
 - limit, filter, iif, dateFormat (now)
+- TODO
