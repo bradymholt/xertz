@@ -14,16 +14,18 @@ xertz is a static site generator with first-class support for Markdown and Handl
 
 ## Content Files
 
+- TODO
+
 ### Config
 
-### Front Mater
-
-- defaults
+- TODO
 
 ## Layouts
 
 - Files prefixes with _ are not processed
+- TODO
 
 ## Template Helpers
 
 - limit, filter, iif, dateFormat (now)
+- TODO
