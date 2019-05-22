@@ -69,13 +69,25 @@ class cli {
       "../",
       this.scaffoldDirectoryName
     );
-    fse.copySync(scaffoldDirectory, targetDirectoryPath);
+    fse.copySync(scaffoldDirectory, targetDirectoryPath, {
+      filter: (src: string, dest: string) => {
+        const name = path.parse(src).name;
+        return name != "_dist";
+      }
+    });
 
     // Add today's date in the example content file
+    const postsRelativePath = path.join(Builder.contentDirectoryName, "posts");
+
     fse.renameSync(
-      path.join(targetDirectoryPath, this.scaffoldContentExampleFileName),
       path.join(
         targetDirectoryPath,
+        postsRelativePath,
+        this.scaffoldContentExampleFileName
+      ),
+      path.join(
+        targetDirectoryPath,
+        postsRelativePath,
         this.scaffoldContentExampleFileName.replace(
           "YYYY-MM-DD",
           getCurrentDateInISOFormat()
