@@ -28,6 +28,7 @@ xertz requires Node.js to be installed and is distributed on [npm](https://npmjs
 - Full content in RSS feed by exposing more than excerpt
 - Assets in same folder as content
 - Plugins (maybe)
+- Faster, incremental builds
 
 ## Content Files
 
