@@ -23,11 +23,17 @@ xertz requires Node.js to be installed and is distributed on [npm](https://npmjs
 - Style content available in templates
 - Supports SaSS
 
+## Planned Features
+
+- Full content in RSS feed by exposing more than excerpt
+- Assets in same folder as content
+- Plugins (maybe)
+
 ## Content Files
 
 - TODO
 
-### Config
+## Config
 
 - TODO
 
