@@ -1,4 +1,4 @@
-# xertz
+# xertz  [![Build Status](https://travis-ci.org/bradymholt/xertz.svg?branch=master)](https://travis-ci.org/bradymholt/xertz)
 
 > Pronounced ‘zerts’, it means to gulp something down quickly and/or in a greedy fashion
 
