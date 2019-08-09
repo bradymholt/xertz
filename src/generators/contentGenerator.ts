@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
 
-import marked  from "marked";
+import marked from "marked";
 import matter from "gray-matter";
 import prismjs from "prismjs";
 
@@ -19,7 +19,7 @@ export class ContentGenerator {
   readonly contentExtensionsToInclude = ["md"];
 
   // Options
-  readonly renderAmpPages = true;  
+  readonly renderAmpPages = true;
   readonly codeHighlight = true;
 
   initialized = false;
@@ -110,7 +110,7 @@ export class ContentGenerator {
         }
       }
 
-      // templateData contains the content we don't want this to stay in memory
+      // templateData contains the content and we don't want this to stay in memory
       pages.push(pageConfig);
     }
 
@@ -130,6 +130,7 @@ export class ContentGenerator {
     }
 
     // Generate any template pages in the source directory using pages from current and all subdirectories
+    // We do this last because we need the pages array with all the content for inclusion in the template pages.
     if (this.templateGenerator) {
       this.templateGenerator.render(
         sourceDirectory,
@@ -225,7 +226,7 @@ export class ContentGenerator {
       pageConfig.layout || "default"
     );
     let templatedOutput = applyTemplate(templateData);
-  
+
     // Write file
     const destunationPath = path.join(
       this.baseDestDirectory,

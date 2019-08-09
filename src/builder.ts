@@ -40,7 +40,7 @@ export class Builder {
     if (!baseConfig) {
       throw Error(`Config file not found in ${this.baseDirectory}.`);
     }
-
+    
     fse.emptyDirSync(this.distDirectory);
 
     // Assets - copy files that are not processed over to dist/ as-is.
