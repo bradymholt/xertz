@@ -9,14 +9,7 @@ describe("start", () => {
     const source = path.join(__dirname, "../scaffold/");
     const dest = path.join(__dirname, "./tmp_scaffold");
     fse.emptyDirSync(dest);
-    fse.copySync(source, dest);
-    fse.renameSync(
-      path.join(dest, "content/posts/YYYY-MM-DD-my-first-post.md"),
-      path.join(
-        dest,
-        `content/posts/${getCurrentDateInISOFormat()}-my-first-post.md`
-      )
-    );
+    fse.copySync(source, dest);    
     new Builder(dest).start();
 
     const aboutMeContent = fs.readFileSync(path.join(dest, "_dist/about-me/index.html"), { encoding: "utf-8"});

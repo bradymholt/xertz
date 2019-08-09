@@ -156,6 +156,16 @@ export class ContentGenerator {
       content.data // front-matter,
     );
 
+    if (pageConfig.date && <any>pageConfig.date instanceof Date) {
+      // pageConfig.date is a Date object so convert it to ISO format.
+      // This happens because gray-matter parses unquoted ISO dates and converts them to date object
+      const date: Date = <any>pageConfig.date;
+      const isoDate = new Date(
+        date.getTime() - date.getTimezoneOffset() * 60000
+      ).toISOString();
+      pageConfig.date = isoDate;
+    }
+
     if (!pageConfig.slug && pageConfig.permalink) {
       // Honor "permalink" alias for slug
       pageConfig.slug = pageConfig.permalink;
