@@ -113,7 +113,7 @@ export class TemplateGenerator {
     }    
 
     // Write file
-    // TODO: config base_path is ignored for template files...I think this is ok but need to make obvious.
+    // TODO: config dist_path is ignored for template files...I think this is ok but need to make obvious.
     const currentFileExtension = path.extname(currentFileName);
     // Remove extension (i.e. foo.html.hbs => foo.html)
     const outFileNmae = currentFileName.replace(currentFileExtension, "");

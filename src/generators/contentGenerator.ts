@@ -93,6 +93,10 @@ export class ContentGenerator {
         path.join(sourceDirectory, currentFileName)
       );
 
+      if (currentConfig.dist_path) {
+        destDirectory = path.join(destDirectory, currentConfig.dist_path);
+      }
+
       const { pageConfig, templateData } = this.renderContentFile(
         currentFileName,
         contentFile,
@@ -201,11 +205,16 @@ export class ContentGenerator {
       .replace(this.baseDestDirectory, "")
       .replace(/^\//, "");
 
+    // If slug name file is something other than "index" then wrap in directory of slug name so that:
+    //   my-post.md > as my-post/index.html
+    //   my-post/index.md > my-post/index.html.
+    const slugDirectoryContainer =
+      pageConfig.slug != "index" ? pageConfig.slug : "";
+
     // TODO: Make path slug name configurable
     const relativeDestinationPath = path.join(
-      destDirectorRelativeToBase,
-      currentConfig.base_path || "",
-      pageConfig.slug,
+      destDirectorRelativeToBase,            
+      slugDirectoryContainer,
       "/"
     );
     pageConfig.path = relativeDestinationPath;
@@ -228,13 +237,13 @@ export class ContentGenerator {
     let templatedOutput = applyTemplate(templateData);
 
     // Write file
-    const destunationPath = path.join(
+    const destinationPath = path.join(
       this.baseDestDirectory,
       relativeDestinationPath
     );
-    fse.emptyDirSync(destunationPath);
+    fse.ensureDirSync(destinationPath);
     fs.writeFileSync(
-      path.join(destunationPath, this.contentPageName),
+      path.join(destinationPath, this.contentPageName),
       templatedOutput
     );
 
