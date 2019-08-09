@@ -6,7 +6,14 @@
       "type": "node",
       "request": "launch",
       "runtimeArgs": ["-r", "ts-node/register"],
-      "args": ["${workspaceRoot}/bin/start.js"]
+      "args": ["${workspaceRoot}/bin/start.js"],
+    },
+    {
+      "name": "build_scaffold",
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["-r", "ts-node/register"],
+      "args": ["${workspaceRoot}/bin/start.ts", "build", "scaffold"]      
     },
     {
       "name": "Test - All",
