@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+{{> head}}
+
+<body class="{{ body_class }}">
+  {{> header}}
+  <div class="page-content">
+    <div class="wrapper">
+      {{> sidebar}}
+      {{{ content }}}
+    </div>
+  </div>
+  <div class="wrapper">
+    {{> footer}}
+  </div>
+  {{> google_analytics}}
+</body>
+
+</html>
