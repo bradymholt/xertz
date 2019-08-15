@@ -13,7 +13,6 @@ import { AmpGenerator } from "./ampGenerator";
 import { TemplateManager } from "../templateManager";
 
 export class ContentGenerator {
-  readonly baseConfig: interfaces.IConfig;
   readonly styles: Array<interfaces.IStyle>;
   readonly contentPageName = "index.html";
   readonly contentExtensionsToInclude = ["md"];
@@ -33,12 +32,7 @@ export class ContentGenerator {
   readonly markedRender: marked.Renderer;
   readonly markedHighlighter: ((code: string, lang: string) => string) | null;
 
-  constructor(
-    baseConfig: interfaces.IConfig,
-    styles: Array<interfaces.IStyle>,
-    layoutsDirectory: string
-  ) {
-    this.baseConfig = baseConfig;
+  constructor(styles: Array<interfaces.IStyle>, layoutsDirectory: string) {
     this.styles = styles;
 
     this.templateManager = new TemplateManager(layoutsDirectory);
@@ -46,15 +40,16 @@ export class ContentGenerator {
     this.markedHighlighter = this.codeHighlight ? this.prismHighlighter : null;
   }
 
-  protected initialize(sourceDirectory: string, destDirectory: string) {
+  protected initialize(
+    config: interfaces.IConfig,
+    sourceDirectory: string,
+    destDirectory: string
+  ) {
     if (!this.initialized) {
       this.baseSourceDirectory = sourceDirectory;
       this.baseDestDirectory = destDirectory;
 
-      this.baseTemplateData = this.buildBaseTemplateData(
-        this.baseConfig,
-        this.styles
-      );
+      this.baseTemplateData = this.buildBaseTemplateData(config, this.styles);
 
       this.templateGenerator = new TemplateGenerator(
         this.baseTemplateData,
@@ -73,11 +68,15 @@ export class ContentGenerator {
     }
   }
 
-  public async render(sourceDirectory: string, destDirectory: string) {
-    this.initialize(sourceDirectory, destDirectory);
+  public async render(
+    baseConfig: interfaces.IConfig,
+    sourceDirectory: string,
+    destDirectory: string
+  ) {
+    this.initialize(baseConfig, sourceDirectory, destDirectory);
 
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
-    let currentConfig = Object.assign(sourceDirectoryConfig, this.baseConfig);
+    let currentConfig = Object.assign(baseConfig, sourceDirectoryConfig);
 
     const pages: Array<interfaces.IPageConfig> = [];
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
@@ -92,10 +91,6 @@ export class ContentGenerator {
       const contentFile = this.readContentFile(
         path.join(sourceDirectory, currentFileName)
       );
-
-      if (currentConfig.dist_path) {
-        destDirectory = path.join(destDirectory, currentConfig.dist_path);
-      }
 
       const { pageConfig, templateData } = this.renderContentFile(
         currentFileName,
@@ -127,6 +122,7 @@ export class ContentGenerator {
       const subDirectorySource = path.join(sourceDirectory, subDirectoryName);
       const subDirectoryDest = path.join(destDirectory, subDirectoryName);
       const subContent = await this.render(
+        currentConfig,
         subDirectorySource,
         subDirectoryDest
       );
@@ -161,14 +157,14 @@ export class ContentGenerator {
       content.data // front-matter,
     );
 
+    const isContentPackageDirectory = currentFileName == "index.md";
+
     if (pageConfig.date && <any>pageConfig.date instanceof Date) {
       // pageConfig.date is a Date object so convert it to ISO format.
       // This happens because gray-matter parses unquoted ISO dates and converts them to date object
       const date: Date = <any>pageConfig.date;
-      const isoDate = new Date(
-        date.getTime() - date.getTimezoneOffset() * 60000
-      ).toISOString();
-      pageConfig.date = isoDate;
+      const isoDate = date.toISOString();
+      pageConfig.date = isoDate.substr(0, 10);
     }
 
     if (!pageConfig.slug && pageConfig.permalink) {
@@ -177,9 +173,17 @@ export class ContentGenerator {
     }
 
     if (!pageConfig.date || !pageConfig.slug) {
-      // date or slug is not specified so determine from filename
-      const fileNameMatcher = currentFileName.match(
-        /(\d{4}-\d{2}-\d{2})?[_|-]?(.*).md/
+      // date or slug is not specified so determine from filename or content package folder name
+      let baseName = null;
+      if (isContentPackageDirectory) {
+        baseName = path.basename(destDirectory);
+      } else {
+        // my-first-post.md > my-first-post
+        baseName = currentFileName.replace(/\.[\w]+$/, "");
+      }
+
+      const fileNameMatcher = baseName.match(
+        /(\d{4}-\d{2}-\d{2})?[_|-]?(.*)\.?/
       );
       if (fileNameMatcher != null) {
         if (!pageConfig.date) {
@@ -201,23 +205,19 @@ export class ContentGenerator {
       pageConfig.year = pageConfig.date.substr(0, 4);
     }
 
-    const destDirectorRelativeToBase = destDirectory
+    let destDirectorRelativeToBase = destDirectory
       .replace(this.baseDestDirectory, "")
       .replace(/^\//, "");
-
-    // If slug name file is something other than "index" then wrap in directory of slug name so that:
-    //   my-post.md > as my-post/index.html
-    //   my-post/index.md > my-post/index.html.
-    const slugDirectoryContainer =
-      pageConfig.slug != "index" ? pageConfig.slug : "";
+    if (pageConfig.dist_path) {
+      destDirectorRelativeToBase = pageConfig.dist_path.replace(/^\//, "");
+    }
 
     // TODO: Make path slug name configurable
-    const relativeDestinationPath = path.join(
-      destDirectorRelativeToBase,            
-      slugDirectoryContainer,
+    pageConfig.path = path.join(
+      destDirectorRelativeToBase,
+      pageConfig.slug,
       "/"
     );
-    pageConfig.path = relativeDestinationPath;
 
     if (this.renderAmpPages) {
       pageConfig.path_amp = pageConfig.path + "amp.html";
@@ -237,10 +237,7 @@ export class ContentGenerator {
     let templatedOutput = applyTemplate(templateData);
 
     // Write file
-    const destinationPath = path.join(
-      this.baseDestDirectory,
-      relativeDestinationPath
-    );
+    const destinationPath = path.join(this.baseDestDirectory, pageConfig.path);
     fse.ensureDirSync(destinationPath);
     fs.writeFileSync(
       path.join(destinationPath, this.contentPageName),

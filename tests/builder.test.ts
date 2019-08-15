@@ -30,5 +30,15 @@ describe("start", () => {
         "Hello there.  My name is Brady Holt and I like to blog."
       )
     ).toBeTruthy();
+
+    const mySecondPostContent = fs.readFileSync(
+      path.join(scaffoldFolder, "_dist/my-second-post/index.html"),
+      { encoding: "utf-8" }
+    );
+    expect(
+      mySecondPostContent.includes(
+        "August 10, 2019"
+      )
+    ).toBeTruthy();
   });
 });

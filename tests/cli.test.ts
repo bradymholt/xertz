@@ -22,16 +22,5 @@ describe("init", () => {
       mockError.mockReset();
       mockExit.mockReset();
     }
-  });
-
-  it("copies scaffold to init destination directory", () => {
-    const cwd = process.cwd();
-    const destDirectoryName = "fake-dir";
-    const cli = init(cwd, ["init", destDirectoryName]);
-    cli.run();
-    expect(copySync).toHaveBeenCalledWith(
-      path.join(cwd, "scaffold"),
-      path.join(cwd, destDirectoryName)
-    );
-  });
+  }); 
 });
