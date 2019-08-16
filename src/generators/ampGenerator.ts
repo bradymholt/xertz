@@ -27,7 +27,7 @@ export class AmpGenerator {
     this.templateManager = templateManager;
   }
 
-  public async render(page: IPageConfig, templateData: ITemplateData) {
+  public async render(pageConfig: IPageConfig, templateData: ITemplateData) {
     const applyTemplate = this.templateManager.getTemplate(this.ampLayout);
     const templatedOutput = applyTemplate(templateData);
 
@@ -36,7 +36,7 @@ export class AmpGenerator {
     });   
 
     fs.writeFileSync(
-      path.join(this.baseDestDirectory, page.path, this.ampPageName),
+      path.join(this.baseDestDirectory, pageConfig.path, this.ampPageName),
       ampOutput
     );
   }

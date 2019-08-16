@@ -4,7 +4,7 @@ export interface IConfig {
   site_description: string;
   site_url: string;
   site_author: string;
-  base_path?: string;
+  dist_path?: string;
 }
 
 // Config found in .md front-matter

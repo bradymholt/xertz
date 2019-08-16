@@ -1,5 +1,6 @@
 ---
 title: My First Post
+date: 2019-08-09
 ---
 
 Hello there.  This is my first post.

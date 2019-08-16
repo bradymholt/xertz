@@ -1,0 +1,12 @@
+---
+title: My First Post
+date: 2019-08-09
+---
+
+Hello there.  This is my first post.
+
+```typescript
+const foo:string = "123";
+```
+
+![Template Screenshot](/media/my-image.png)

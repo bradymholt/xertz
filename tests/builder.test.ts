@@ -2,24 +2,43 @@ import { Builder } from "../src/builder";
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
-import { getCurrentDateInISOFormat } from "../src/dateHelper";
 
 describe("start", () => {
-  it("builds scaffold correct", () => {
-    const source = path.join(__dirname, "../scaffold/");
-    const dest = path.join(__dirname, "./tmp_scaffold");
-    fse.emptyDirSync(dest);
-    fse.copySync(source, dest);
-    fse.renameSync(
-      path.join(dest, "content/posts/YYYY-MM-DD-my-first-post.md"),
-      path.join(
-        dest,
-        `content/posts/${getCurrentDateInISOFormat()}-my-first-post.md`
-      )
-    );
-    new Builder(dest).start();
+  it("builds scaffold correct", async () => {
+    const scaffoldFolder = path.join(__dirname, "./scaffold");
+    await new Builder(scaffoldFolder).start();
 
-    const aboutMeContent = fs.readFileSync(path.join(dest, "_dist/about-me/index.html"), { encoding: "utf-8"});
-    expect(aboutMeContent.includes("Hello there.  My name is Brady Holt and I like to blog.")).toBeTruthy();
+    expect(
+      fs.existsSync(path.join(scaffoldFolder, "_dist/my-first-post/index.html"))
+    ).toEqual(true);
+    expect(
+      fs.existsSync(path.join(scaffoldFolder, "_dist/my-first-post/amp.html"))
+    ).toEqual(true);
+    expect(
+      fs.existsSync(path.join(scaffoldFolder, "_dist/my-second-post/index.html"))
+    ).toEqual(true);
+    expect(
+      fs.existsSync(path.join(scaffoldFolder, "_dist/my-second-post/amp.html"))
+    ).toEqual(true);
+
+    const aboutMeContent = fs.readFileSync(
+      path.join(scaffoldFolder, "_dist/about-me/index.html"),
+      { encoding: "utf-8" }
+    );
+    expect(
+      aboutMeContent.includes(
+        "Hello there.  My name is Brady Holt and I like to blog."
+      )
+    ).toBeTruthy();
+
+    const mySecondPostContent = fs.readFileSync(
+      path.join(scaffoldFolder, "_dist/my-second-post/index.html"),
+      { encoding: "utf-8" }
+    );
+    expect(
+      mySecondPostContent.includes(
+        "August 10, 2019"
+      )
+    ).toBeTruthy();
   });
 });
