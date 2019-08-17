@@ -278,7 +278,7 @@ export class ContentGenerator {
     const parsedMatter = matter(source);
 
     let markdownContent = parsedMatter.content;
-    // Prepend relative image references with path 
+    // Prepend relative image references with path
     markdownContent = markdownContent
       .replace(/!\[.+\]\((\w+.*)\)/, (match, filename) => {
         // Markdown format (![Smile](smile.png) => ![Smile](my-most/smile.png))
