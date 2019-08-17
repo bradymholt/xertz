@@ -5,7 +5,6 @@ import { IStyle } from "./interfaces";
 import { loadConfigFile } from "./configHelper";
 
 import { StylesGenerator } from "./generators/stylesGenerator";
-import { AssetGenerator } from "./generators/assetGenerator";
 import { ContentGenerator } from "./generators/contentGenerator";
 
 export class Builder {
@@ -42,10 +41,7 @@ export class Builder {
     }
 
     fse.emptyDirSync(this.distDirectory);
-
-    // Assets - copy files that are not processed over to dist/ as-is.
-    new AssetGenerator().render(this.contentDirectory, this.distDirectory);
-
+    
     // Styles - process styles first so they are available to the content files later
     const styles: Array<IStyle> = new StylesGenerator().render(
       this.contentDirectory,

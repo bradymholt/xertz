@@ -23,9 +23,9 @@ export interface IFrontMatter {
 }
 
 // Config combined with front matter
-export interface IPageConfig extends IConfig, IFrontMatter {
+export interface IPageConfig extends IConfig, IFrontMatter {  
   filename: string;
-  path_amp?: string;  
+  path_amp?: string;
 }
 
 // Config that gets passed into the compiled template
@@ -36,7 +36,7 @@ export interface ITemplateData extends IPageConfig {
 
 export interface IContentSource {
   data: IFrontMatter;
-  html: string;  
+  html: string;
 }
 
 export interface IStyle {

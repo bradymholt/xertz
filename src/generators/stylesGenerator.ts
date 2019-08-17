@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as fse from "fs-extra";
 import * as path from "path";
 import * as sass from "node-sass";
 import { IStyle } from "../interfaces";
@@ -32,7 +33,8 @@ export class StylesGenerator {
       const fileName = path.parse(currentFile).name;
       const outFileName = `${fileName}.${this.outFileExtension}`;
 
-      fs.writeFileSync(path.join(destDirectory, outFileName), content);
+      fse.ensureDirSync(destDirectory);
+      fse.writeFileSync(path.join(destDirectory, outFileName), content);
 
       // TODO: Also include path to rendered file
       // TODO: What if 2 styles have the same name

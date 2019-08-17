@@ -87,6 +87,56 @@ export class ContentGenerator {
         this.contentExtensionsToInclude.includes(path.extname(f).substr(1))
     );
 
+    const currenPageConfig: interfaces.IPageConfig = <interfaces.IPageConfig>(
+      Object.assign({}, currentConfig)
+    );
+
+    const isContentPackageDirectory = fse.existsSync(
+      path.join(sourceDirectory, "index.md")
+    );
+
+    if (isContentPackageDirectory) {
+      const fileNameMatcher = path
+        .basename(destDirectory)
+        .match(/(\d{4}-\d{2}-\d{2})?[_|-]?(.*)/);
+      if (fileNameMatcher != null) {
+        currenPageConfig.date = fileNameMatcher[1];
+        currenPageConfig.slug = fileNameMatcher[2];
+      }
+    }
+
+    // Determine actualDestDirectory
+    let actualDestDirectory = destDirectory;
+    if (currenPageConfig.dist_path) {
+      actualDestDirectory = path.join(
+        this.baseDestDirectory,
+        currenPageConfig.dist_path.replace(/^\//, "")
+      );
+    }
+    if (isContentPackageDirectory) {
+      actualDestDirectory = path.join(
+        actualDestDirectory,
+        currenPageConfig.slug
+      );
+    }
+
+    fse.ensureDirSync(actualDestDirectory);
+
+    // copy assets
+    const assetIgnoreExtensions = ["scss", "sass", "css", "md", "hbs"];
+    const assetFileNames = sourceDirectoryFileNames.filter(
+      f =>
+        !f.startsWith("_") &&
+        !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
+        !assetIgnoreExtensions.includes(path.extname(f).substr(1))
+    );
+    for (let currentFileName of assetFileNames) {
+      fse.copyFileSync(
+        path.join(sourceDirectory, currentFileName),
+        path.join(actualDestDirectory, currentFileName)
+      );
+    }
+
     for (let currentFileName of contentFileNames) {
       const contentFile = this.readContentFile(
         path.join(sourceDirectory, currentFileName)
@@ -95,8 +145,8 @@ export class ContentGenerator {
       const { pageConfig, templateData } = this.renderContentFile(
         currentFileName,
         contentFile,
-        currentConfig,
-        destDirectory
+        currenPageConfig,
+        actualDestDirectory
       );
 
       if (this.renderAmpPages && this.ampGenerator) {
@@ -108,7 +158,6 @@ export class ContentGenerator {
           );
         }
       }
-
       // templateData contains the content and we don't want this to stay in memory
       pages.push(pageConfig);
     }
@@ -146,14 +195,14 @@ export class ContentGenerator {
   private renderContentFile(
     currentFileName: string,
     content: interfaces.IContentSource,
-    currentConfig: interfaces.IConfig,
+    currentPageConfig: interfaces.IPageConfig,
     destDirectory: string
   ) {
     const pageConfig: interfaces.IPageConfig = Object.assign(
+      currentPageConfig,
       {
         filename: currentFileName
       },
-      currentConfig,
       content.data // front-matter,
     );
 
@@ -174,17 +223,9 @@ export class ContentGenerator {
 
     if (!pageConfig.date || !pageConfig.slug) {
       // date or slug is not specified so determine from filename or content package folder name
-      let baseName = null;
-      if (isContentPackageDirectory) {
-        baseName = path.basename(destDirectory);
-      } else {
-        // my-first-post.md > my-first-post
-        baseName = currentFileName.replace(/\.[\w]+$/, "");
-      }
-
-      const fileNameMatcher = baseName.match(
-        /(\d{4}-\d{2}-\d{2})?[_|-]?(.*)\.?/
-      );
+      const fileNameMatcher = currentFileName
+        .replace(/\.[\w]+$/, "")
+        .match(/(\d{4}-\d{2}-\d{2})?[_|-]?(.*)\.?/);
       if (fileNameMatcher != null) {
         if (!pageConfig.date) {
           pageConfig.date = fileNameMatcher[1];
@@ -205,19 +246,14 @@ export class ContentGenerator {
       pageConfig.year = pageConfig.date.substr(0, 4);
     }
 
-    let destDirectorRelativeToBase = destDirectory
-      .replace(this.baseDestDirectory, "")
-      .replace(/^\//, "");
-    if (pageConfig.dist_path) {
-      destDirectorRelativeToBase = pageConfig.dist_path.replace(/^\//, "");
+    if (!isContentPackageDirectory) {
+      destDirectory = path.join(destDirectory, pageConfig.slug);
     }
 
-    // TODO: Make path slug name configurable
-    pageConfig.path = path.join(
-      destDirectorRelativeToBase,
-      pageConfig.slug,
-      "/"
-    );
+    // path is set to directory relative to _dist/ folder
+    pageConfig.path = destDirectory
+      .replace(this.baseDestDirectory, "")
+      .replace(/^\//, "");
 
     if (this.renderAmpPages) {
       pageConfig.path_amp = pageConfig.path + "amp.html";
@@ -237,10 +273,9 @@ export class ContentGenerator {
     let templatedOutput = applyTemplate(templateData);
 
     // Write file
-    const destinationPath = path.join(this.baseDestDirectory, pageConfig.path);
-    fse.ensureDirSync(destinationPath);
+    fse.ensureDirSync(destDirectory);
     fs.writeFileSync(
-      path.join(destinationPath, this.contentPageName),
+      path.join(destDirectory, this.contentPageName),
       templatedOutput
     );
 

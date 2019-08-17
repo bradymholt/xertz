@@ -4,15 +4,22 @@ import * as fse from "fs-extra";
 import * as yaml from "js-yaml";
 import { IConfig } from "./interfaces";
 
+const cachedConfigFiles: { [sourceDirectory: string]: IConfig } = {};
+
 export function loadConfigFile(sourceDirectory: string) {
-  const configFilePath = path.join(sourceDirectory, "_config.yml");
-  if (fse.existsSync(configFilePath)) {
-    const configFileContent = fs.readFileSync(
-      path.join(sourceDirectory, "_config.yml"),
-      "utf-8"
-    );
-    return yaml.safeLoad(configFileContent) as IConfig;
-  } else {
-    return {} as IConfig;
+  if (!cachedConfigFiles[sourceDirectory]) {
+    const configFilePath = path.join(sourceDirectory, "_config.yml");
+    if (fse.existsSync(configFilePath)) {
+      const configFileContent = fs.readFileSync(
+        path.join(sourceDirectory, "_config.yml"),
+        "utf-8"
+      );
+      const config = yaml.safeLoad(configFileContent) as IConfig;
+      cachedConfigFiles[sourceDirectory] = config;
+    } else {
+      cachedConfigFiles[sourceDirectory] = {} as IConfig;
+    }
   }
+
+  return cachedConfigFiles[sourceDirectory];
 }

@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import * as handlebars from "handlebars";
 import ampify from "@bradymholt/ampify";
 
 import { ITemplateData, IPageConfig } from "../interfaces";
@@ -12,7 +11,7 @@ export class AmpGenerator {
   readonly ampLayout = "amp";
 
   // Options
-  
+
   readonly baseSourceDirectory: string;
   readonly baseDestDirectory: string;
   readonly templateManager: TemplateManager;
@@ -33,20 +32,12 @@ export class AmpGenerator {
 
     let ampOutput = await ampify(templatedOutput, {
       cwd: this.baseSourceDirectory.replace(/\/$/, "")
-    });   
+    });
 
+    console.log(path.join(this.baseDestDirectory, pageConfig.path, this.ampPageName))
     fs.writeFileSync(
       path.join(this.baseDestDirectory, pageConfig.path, this.ampPageName),
       ampOutput
     );
-  }
-
-  // TODO: Dry this up - it is in contentGenerator as well
-  private initializeTemplate(templateFile: string) {
-    const templateContent = fs.readFileSync(templateFile, {
-      encoding: "utf-8"
-    });
-    const applyTemplate = handlebars.compile(templateContent);
-    return applyTemplate;
   }
 }
