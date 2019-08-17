@@ -23,6 +23,9 @@ describe("start", () => {
     expect(
       fs.existsSync(path.join(scaffoldFolder, "_dist/my-second-post/smile.png"))
     ).toEqual(true);
+    expect(
+      fs.existsSync(path.join(scaffoldFolder, "_dist/projects/index.html"))
+    ).toEqual(true);
 
     const aboutMeContent = fs.readFileSync(
       path.join(scaffoldFolder, "_dist/about-me/index.html"),

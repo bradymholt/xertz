@@ -1,7 +1,6 @@
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
-
 import matter from "gray-matter";
 import {
   IConfig,
@@ -26,7 +25,7 @@ export class TemplateGenerator {
     this.templateManager = templateManager;
   }
 
-  public render(
+  public generate(
     sourceDirectory: string,
     destDirectory: string,
     currentConfig: IConfig,
@@ -81,6 +80,7 @@ export class TemplateGenerator {
     const pageConfig: IPageConfig = Object.assign(
       {
         base_path: "",
+        source: "",
         filename: currentFileName
       },
       currentConfig,

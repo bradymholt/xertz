@@ -43,7 +43,7 @@ export class Builder {
     fse.emptyDirSync(this.distDirectory);
     
     // Styles - process styles first so they are available to the content files later
-    const styles: Array<IStyle> = new StylesGenerator().render(
+    const styles: Array<IStyle> = new StylesGenerator().generate(
       this.contentDirectory,
       this.distDirectory
     );
@@ -53,7 +53,7 @@ export class Builder {
       styles,
       this.layoutsDirectory
     );
-    await contentGenerator.render(
+    await contentGenerator.generate(
       baseConfig,
       this.contentDirectory,
       this.distDirectory

@@ -68,7 +68,7 @@ export class ContentGenerator {
     }
   }
 
-  public async render(
+  public async generate(
     baseConfig: interfaces.IConfig,
     sourceDirectory: string,
     destDirectory: string
@@ -76,7 +76,14 @@ export class ContentGenerator {
     this.initialize(baseConfig, sourceDirectory, destDirectory);
 
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
-    let currentConfig = Object.assign(baseConfig, sourceDirectoryConfig);
+    let currentConfig: interfaces.IPageConfig = <interfaces.IPageConfig>(
+      Object.assign({}, baseConfig, sourceDirectoryConfig, {})
+    );
+
+    // The following config cannot be inherited and must be determined for each content file.
+    currentConfig.date = "";
+    currentConfig.slug = "";
+    currentConfig.filename = "";
 
     const pages: Array<interfaces.IPageConfig> = [];
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
@@ -85,10 +92,6 @@ export class ContentGenerator {
         !f.startsWith("_") &&
         !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
         this.contentExtensionsToInclude.includes(path.extname(f).substr(1))
-    );
-
-    const currenPageConfig: interfaces.IPageConfig = <interfaces.IPageConfig>(
-      Object.assign({}, currentConfig)
     );
 
     const isContentPackageDirectory = fse.existsSync(
@@ -100,24 +103,25 @@ export class ContentGenerator {
         .basename(destDirectory)
         .match(/(\d{4}-\d{2}-\d{2})?[_|-]?(.*)/);
       if (fileNameMatcher != null) {
-        currenPageConfig.date = fileNameMatcher[1];
-        currenPageConfig.slug = fileNameMatcher[2];
+        currentConfig.date = fileNameMatcher[1];
+        currentConfig.slug = fileNameMatcher[2];
       }
     }
 
     // Determine actualDestDirectory
     let actualDestDirectory = destDirectory;
-    if (currenPageConfig.dist_path) {
+    if (currentConfig.dist_path) {
       actualDestDirectory = path.join(
         this.baseDestDirectory,
-        currenPageConfig.dist_path.replace(/^\//, "")
+        currentConfig.dist_path.replace(/^\//, "")
       );
-    }
-    if (isContentPackageDirectory) {
-      actualDestDirectory = path.join(
-        actualDestDirectory,
-        currenPageConfig.slug
-      );
+
+      if (isContentPackageDirectory) {
+        actualDestDirectory = path.join(
+          actualDestDirectory,
+          currentConfig.slug
+        );
+      }
     }
 
     fse.ensureDirSync(actualDestDirectory);
@@ -138,20 +142,18 @@ export class ContentGenerator {
     }
 
     for (let currentFileName of contentFileNames) {
-      const contentFile = this.readContentFile(
-        path.join(sourceDirectory, currentFileName)
-      );
+      const currentPageConfig = Object.assign({}, currentConfig);
+      currentPageConfig.filename = currentFileName;
+      currentPageConfig.source = path.join(sourceDirectory, currentFileName);
 
       const { pageConfig, templateData } = this.renderContentFile(
-        currentFileName,
-        contentFile,
-        currenPageConfig,
+        currentPageConfig,
         actualDestDirectory
       );
 
       if (this.renderAmpPages && this.ampGenerator) {
         try {
-          await this.ampGenerator.render(pageConfig, templateData);
+          await this.ampGenerator.generate(templateData);
         } catch (err) {
           console.error(
             `Error generating AMP file for '${currentFileName}' - ${err}`
@@ -168,12 +170,12 @@ export class ContentGenerator {
     });
 
     for (let subDirectoryName of subDirectoryNames) {
-      const subDirectorySource = path.join(sourceDirectory, subDirectoryName);
-      const subDirectoryDest = path.join(destDirectory, subDirectoryName);
-      const subContent = await this.render(
+      const subSourceDirectory = path.join(sourceDirectory, subDirectoryName);
+      const subDestDirectory = path.join(destDirectory, subDirectoryName);
+      const subContent = await this.generate(
         currentConfig,
-        subDirectorySource,
-        subDirectoryDest
+        subSourceDirectory,
+        subDestDirectory
       );
       pages.push(...subContent);
     }
@@ -181,7 +183,7 @@ export class ContentGenerator {
     // Generate any template pages in the source directory using pages from current and all subdirectories
     // We do this last because we need the pages array with all the content for inclusion in the template pages.
     if (this.templateGenerator) {
-      this.templateGenerator.render(
+      this.templateGenerator.generate(
         sourceDirectory,
         destDirectory,
         currentConfig,
@@ -193,28 +195,10 @@ export class ContentGenerator {
   }
 
   private renderContentFile(
-    currentFileName: string,
-    content: interfaces.IContentSource,
-    currentPageConfig: interfaces.IPageConfig,
-    destDirectory: string
+    pageConfig: interfaces.IPageConfig,
+    actualDestDirectory: string
   ) {
-    const pageConfig: interfaces.IPageConfig = Object.assign(
-      currentPageConfig,
-      {
-        filename: currentFileName
-      },
-      content.data // front-matter,
-    );
-
-    const isContentPackageDirectory = currentFileName == "index.md";
-
-    if (pageConfig.date && <any>pageConfig.date instanceof Date) {
-      // pageConfig.date is a Date object so convert it to ISO format.
-      // This happens because gray-matter parses unquoted ISO dates and converts them to date object
-      const date: Date = <any>pageConfig.date;
-      const isoDate = date.toISOString();
-      pageConfig.date = isoDate.substr(0, 10);
-    }
+    const isContentPackageDirectory = pageConfig.filename == "index.md";
 
     if (!pageConfig.slug && pageConfig.permalink) {
       // Honor "permalink" alias for slug
@@ -223,7 +207,7 @@ export class ContentGenerator {
 
     if (!pageConfig.date || !pageConfig.slug) {
       // date or slug is not specified so determine from filename or content package folder name
-      const fileNameMatcher = currentFileName
+      const fileNameMatcher = pageConfig.filename
         .replace(/\.[\w]+$/, "")
         .match(/(\d{4}-\d{2}-\d{2})?[_|-]?(.*)\.?/);
       if (fileNameMatcher != null) {
@@ -247,11 +231,11 @@ export class ContentGenerator {
     }
 
     if (!isContentPackageDirectory) {
-      destDirectory = path.join(destDirectory, pageConfig.slug);
+      actualDestDirectory = path.join(actualDestDirectory, pageConfig.slug);
     }
 
     // path is set to directory relative to _dist/ folder
-    pageConfig.path = destDirectory
+    pageConfig.path = actualDestDirectory
       .replace(this.baseDestDirectory, "")
       .replace(/^\//, "");
 
@@ -259,12 +243,14 @@ export class ContentGenerator {
       pageConfig.path_amp = pageConfig.path + "amp.html";
     }
 
+    const contentFile = this.parseContentFile(pageConfig);
+
     // Apply template
     const templateData = Object.assign(
       <interfaces.ITemplateData>{},
       this.baseTemplateData,
       pageConfig,
-      { content: content.html }
+      { content: contentFile.html }
     );
 
     const applyTemplate = this.templateManager.getTemplate(
@@ -273,6 +259,8 @@ export class ContentGenerator {
     let templatedOutput = applyTemplate(templateData);
 
     // Write file
+    console.log(path.join(pageConfig.path));
+    const destDirectory = path.join(this.baseDestDirectory, pageConfig.path);
     fse.ensureDirSync(destDirectory);
     fs.writeFileSync(
       path.join(destDirectory, this.contentPageName),
@@ -282,18 +270,48 @@ export class ContentGenerator {
     return { pageConfig, templateData };
   }
 
-  private readContentFile(filePath: string): interfaces.IContentSource {
-    const source = fs.readFileSync(filePath, { encoding: "utf-8" });
+  private parseContentFile(
+    pageConfig: interfaces.IPageConfig
+  ): interfaces.IContentSource {
+    const source = fs.readFileSync(pageConfig.source, { encoding: "utf-8" });
 
     const parsedMatter = matter(source);
-    const data = parsedMatter.data as interfaces.IFrontMatter;
-    let html = "";
 
-    const fileExtension = path.extname(filePath).substr(1);
+    let markdownContent = parsedMatter.content;
+    // Prepend relative image references with path 
+    markdownContent = markdownContent
+      .replace(/!\[.+\]\((\w+.*)\)/, (match, filename) => {
+        // Markdown format (![Smile](smile.png) => ![Smile](my-most/smile.png))
+        return match.replace(
+          filename,
+          path.join("/", pageConfig.path, filename)
+        );
+      })
+      .replace(/<img\s.*\ssrc=\"([^"]+)\"/g, (match, filename) => {
+        // html format (<img src="smile.png" /> => <img src="my-most/smile.png" />)
+        return match.replace(
+          filename,
+          path.join("/", pageConfig.path, filename)
+        );
+      });
+
+    const frontMatter = parsedMatter.data as interfaces.IFrontMatter;
+    // Add front matter config
+    pageConfig = Object.assign(pageConfig, frontMatter);
+    if (pageConfig.date && <any>pageConfig.date instanceof Date) {
+      // pageConfig.date is a Date object so convert it to ISO format.
+      // This happens because gray-matter parses unquoted ISO dates and converts them to date object
+      const date: Date = <any>pageConfig.date;
+      const isoDate = date.toISOString();
+      pageConfig.date = isoDate.substr(0, 10);
+    }
+
+    let html = "";
+    const fileExtension = path.extname(pageConfig.filename).substr(1);
     switch (fileExtension) {
       case "md":
         // Parse markdown
-        html = marked(parsedMatter.content, {
+        html = marked(markdownContent, {
           smartypants: true,
           highlight: this.codeHighlight ? this.prismHighlighter : undefined,
           renderer: this.markedRender
@@ -304,7 +322,7 @@ export class ContentGenerator {
     }
 
     // Extract exceprt as first <p/> if not already specified
-    if (!data.excerpt) {
+    if (!pageConfig.excerpt) {
       const indexOfFirstParagraph = html.indexOf("<p>");
       if (indexOfFirstParagraph > -1) {
         const indexOfEndOfFirstParagraph = html.indexOf(
@@ -312,7 +330,7 @@ export class ContentGenerator {
           indexOfFirstParagraph
         );
         if (indexOfEndOfFirstParagraph > -1) {
-          data.excerpt = html.substring(
+          pageConfig.excerpt = html.substring(
             indexOfFirstParagraph + 3,
             indexOfEndOfFirstParagraph
           );
@@ -321,7 +339,7 @@ export class ContentGenerator {
     }
 
     return {
-      data,
+      data: frontMatter,
       html
     };
   }

@@ -1,16 +1,15 @@
 import * as fs from "fs";
 import * as path from "path";
-
 import ampify from "@bradymholt/ampify";
-
 import { ITemplateData, IPageConfig } from "../interfaces";
 import { TemplateManager } from "../templateManager";
 
+/**
+ * Generates an AMP page given ITemplateData
+ */
 export class AmpGenerator {
   readonly ampPageName = "amp.html";
   readonly ampLayout = "amp";
-
-  // Options
 
   readonly baseSourceDirectory: string;
   readonly baseDestDirectory: string;
@@ -26,7 +25,7 @@ export class AmpGenerator {
     this.templateManager = templateManager;
   }
 
-  public async render(pageConfig: IPageConfig, templateData: ITemplateData) {
+  public async generate(templateData: ITemplateData) {
     const applyTemplate = this.templateManager.getTemplate(this.ampLayout);
     const templatedOutput = applyTemplate(templateData);
 
@@ -34,9 +33,8 @@ export class AmpGenerator {
       cwd: this.baseSourceDirectory.replace(/\/$/, "")
     });
 
-    console.log(path.join(this.baseDestDirectory, pageConfig.path, this.ampPageName))
     fs.writeFileSync(
-      path.join(this.baseDestDirectory, pageConfig.path, this.ampPageName),
+      path.join(this.baseDestDirectory, templateData.path, this.ampPageName),
       ampOutput
     );
   }
