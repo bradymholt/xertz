@@ -1,6 +1,6 @@
 import * as fs from "fs";
+import * as fse from "fs-extra";
 import * as path from "path";
-
 import matter from "gray-matter";
 import {
   IConfig,
@@ -15,8 +15,6 @@ export class TemplateGenerator {
   readonly baseTemplateData: ITemplateData;
   readonly templateManager: TemplateManager;
 
-  // Options
-
   constructor(
     baseTemplateData: ITemplateData,
     templateManager: TemplateManager
@@ -25,7 +23,7 @@ export class TemplateGenerator {
     this.templateManager = templateManager;
   }
 
-  public render(
+  public generate(
     sourceDirectory: string,
     destDirectory: string,
     currentConfig: IConfig,
@@ -41,11 +39,17 @@ export class TemplateGenerator {
       );
     });
 
-    // Sort pages by filename
+    // Sort pages
     pages.sort((first, second) => {
-      return second.filename.localeCompare(first.filename, "en", {
-        numeric: true
-      });
+      if (!!first.date && !!second.date) {
+        // by date
+        return second.date.localeCompare(first.date, "en", { numeric: true });
+      } else {
+        // by filename
+        return second.filename.localeCompare(first.filename, "en", {
+          numeric: true
+        });
+      }
     });
 
     for (let currentFileName of templateFileNamesToProcess) {
@@ -75,6 +79,8 @@ export class TemplateGenerator {
     const parsedMatter = matter(source);
     const pageConfig: IPageConfig = Object.assign(
       {
+        base_path: "",
+        source: "",
         filename: currentFileName
       },
       currentConfig,
@@ -110,13 +116,14 @@ export class TemplateGenerator {
       templateLayoutOutput = templateLayout(
         Object.assign(templateData, { content: templatePartialOutput })
       );
-    }    
+    }
 
     // Write file
     // TODO: config dist_path is ignored for template files...I think this is ok but need to make obvious.
     const currentFileExtension = path.extname(currentFileName);
     // Remove extension (i.e. foo.html.hbs => foo.html)
     const outFileNmae = currentFileName.replace(currentFileExtension, "");
+    fse.ensureDirSync(destDirectory);
     fs.writeFileSync(
       path.join(destDirectory, outFileNmae),
       templateLayoutOutput

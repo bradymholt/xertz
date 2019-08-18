@@ -1,14 +1,18 @@
 import * as fs from "fs";
+import * as fse from "fs-extra";
 import * as path from "path";
 import * as sass from "node-sass";
 import { IStyle } from "../interfaces";
 
+/**
+ * Generates CSS and compiles Sass
+ */
 export class StylesGenerator {
   readonly extensionsToInclude = ["scss", "sass", "css"];
   readonly outFileExtension = "css";
   readonly outputStyle = "compressed";
 
-  public render(sourceDirectory: string, destDirectory: string) {
+  public generate(sourceDirectory: string, destDirectory: string) {
     const styles: Array<IStyle> = [];
     const baseDirFileNames = fs.readdirSync(sourceDirectory);
     const cssFileNamesToProcess = baseDirFileNames.filter(f => {
@@ -32,12 +36,14 @@ export class StylesGenerator {
       const fileName = path.parse(currentFile).name;
       const outFileName = `${fileName}.${this.outFileExtension}`;
 
-      fs.writeFileSync(path.join(destDirectory, outFileName), content);
-
-      // TODO: Also include path to rendered file
+      fse.ensureDirSync(destDirectory);
+      const outFilePath = path.join(destDirectory, outFileName);
+      fse.writeFileSync(outFilePath, content);
+      
       // TODO: What if 2 styles have the same name
       const style = <IStyle>{
         name: path.parse(currentFileName).name,
+        path: outFilePath,
         content
       };
       styles.push(style);
@@ -48,11 +54,11 @@ export class StylesGenerator {
     });
 
     for (let subDirectoryName of subDirectoryNames) {
-      const subDirectorySource = path.join(sourceDirectory, subDirectoryName);
-      const subDirectoryDest = path.join(destDirectory, subDirectoryName);
-      const subDirectoryStyles = this.render(
-        subDirectorySource,
-        subDirectoryDest
+      const subSourceDirectory = path.join(sourceDirectory, subDirectoryName);
+      const subDestDirectory = path.join(destDirectory, subDirectoryName);
+      const subDirectoryStyles = this.generate(
+        subSourceDirectory,
+        subDestDirectory
       );
       styles.push(...subDirectoryStyles);
     }
