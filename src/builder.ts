@@ -55,13 +55,12 @@ export class Builder {
 
     // Content - process the content files
     const contentGenerator = new ContentGenerator(
-      styles,
-      this.layoutsDirectory
-    );
-    await contentGenerator.generate(
       baseConfig,
+      styles,
+      this.layoutsDirectory,
       this.contentDirectory,
       this.distDirectory
     );
+    await contentGenerator.generateAll();
   }
 }

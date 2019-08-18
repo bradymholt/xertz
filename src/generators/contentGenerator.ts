@@ -23,60 +23,60 @@ export class ContentGenerator {
   readonly markedRender: marked.Renderer;
   readonly markedHighlighter: ((code: string, lang: string) => string) | null;
 
-  initialized = false;
-  baseSourceDirectory = "";
-  baseDestDirectory = "";
-  baseTemplateData: interfaces.ITemplateData | null = null;
-  templateGenerator: TemplateGenerator | null = null;
-  ampGenerator: AmpGenerator | null = null;
+  readonly baseConfig: interfaces.IConfig;
+  readonly baseSourceDirectory: string;
+  readonly baseDestDirectory: string;
+  readonly baseTemplateData: interfaces.ITemplateData;
+  readonly templateGenerator: TemplateGenerator;
+  readonly ampGenerator: AmpGenerator;
 
-  constructor(styles: Array<interfaces.IStyle>, layoutsDirectory: string) {
+  constructor(
+    baseConfig: interfaces.IConfig,
+    styles: Array<interfaces.IStyle>,
+    layoutsDirectory: string,
+    sourceDirectory: string,
+    destDirectory: string
+  ) {
     this.styles = styles;
     this.templateManager = new TemplateManager(layoutsDirectory);
     this.markedRender = this.getMarkedRender();
     this.markedHighlighter = this.codeHighlight ? this.prismHighlighter : null;
+
+    this.baseConfig = baseConfig;
+    this.baseSourceDirectory = sourceDirectory;
+    this.baseDestDirectory = destDirectory;
+
+    this.baseTemplateData = this.buildBaseTemplateData(baseConfig, this.styles);
+    this.templateGenerator = new TemplateGenerator(
+      this.baseTemplateData,
+      this.templateManager
+    );
+
+    this.ampGenerator = new AmpGenerator(
+      this.baseSourceDirectory,
+      this.baseDestDirectory,
+      this.templateManager
+    );
   }
 
-  protected initialize(
+  public async generateAll() {
+    await this.generate(
+      this.baseConfig,
+      this.baseSourceDirectory,
+      this.baseDestDirectory
+    );
+  }
+
+  public async generate(
     config: interfaces.IConfig,
     sourceDirectory: string,
     destDirectory: string
   ) {
-    if (!this.initialized) {
-      this.baseSourceDirectory = sourceDirectory;
-      this.baseDestDirectory = destDirectory;
-
-      this.baseTemplateData = this.buildBaseTemplateData(config, this.styles);
-
-      this.templateGenerator = new TemplateGenerator(
-        this.baseTemplateData,
-        this.templateManager
-      );
-
-      if (this.renderAmpPages) {
-        this.ampGenerator = new AmpGenerator(
-          this.baseSourceDirectory,
-          this.baseDestDirectory,
-          this.templateManager
-        );
-      }
-
-      this.initialized = true;
-    }
-  }
-
-  public async generate(
-    baseConfig: interfaces.IConfig,
-    sourceDirectory: string,
-    destDirectory: string
-  ) {
-    this.initialize(baseConfig, sourceDirectory, destDirectory);
-
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
     // Merge any _config.yml file in current directory with baseConfig to gather config for current directory
     let currentDirectoryPageConfig = Object.assign(
       <interfaces.IPageConfig>{},
-      baseConfig,
+      config,
       sourceDirectoryConfig
     );
 
@@ -96,6 +96,7 @@ export class ContentGenerator {
     }
 
     if (currentDirectoryPageConfig.dist_path) {
+      // dist_path is specified in config which will modify the destination folder
       destDirectory = path.join(
         this.baseDestDirectory,
         currentDirectoryPageConfig.dist_path.replace(/^\//, "")
@@ -208,7 +209,7 @@ export class ContentGenerator {
         destDirectory,
         isContentPackageDirectory
       );
-      await this.renderAmpFile(currentPageConfig, currentFileName);
+      await this.renderAmpFile(currentPageConfig);
 
       pages.push(currentPageConfig);
     }
@@ -365,16 +366,18 @@ export class ContentGenerator {
     };
   }
 
-  private async renderAmpFile(
-    currentPageConfig: interfaces.IPageConfig,
-    currentFileName: string
-  ) {
-    if (this.renderAmpPages && this.ampGenerator) {
+  private async renderAmpFile(currentPageConfig: interfaces.IPageConfig) {
+    if (this.renderAmpPages) {
       try {
-        await this.ampGenerator.generate(currentPageConfig);
+        await this.ampGenerator.generate(
+          currentPageConfig,
+          this.baseTemplateData
+        );
       } catch (err) {
         console.error(
-          `Error generating AMP file for '${currentFileName}' - ${err}`
+          `Error generating AMP file for '${
+            currentPageConfig.path_amp
+          }' - ${err}`
         );
       }
     }

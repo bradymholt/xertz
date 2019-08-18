@@ -41,28 +41,47 @@ describe("start", () => {
     ).toBeTruthy();
   });
 
-  it("creates my-second-post/ correctly", () => {
-    const mySecondPostContent = fs.readFileSync(
-      path.join(scaffoldFolder, "_dist/my-second-post/index.html"),
-      { encoding: "utf-8" }
-    );
+  describe("my-second-post", () => {
+    it("creates index.html correctly", () => {
+      const mySecondPostContent = fs.readFileSync(
+        path.join(scaffoldFolder, "_dist/my-second-post/index.html"),
+        { encoding: "utf-8" }
+      );
 
-    expect(mySecondPostContent.includes("August 10, 2019")).toBeTruthy();
+      expect(mySecondPostContent.includes("August 10, 2019")).toBeTruthy();
 
-    expect(
-      mySecondPostContent.includes(
-        `<img src="/my-second-post/smile.png" alt="Smile">`
-      )
-    ).toBeTruthy();
+      expect(
+        mySecondPostContent.includes(
+          `<img src="/my-second-post/smile.png" alt="Smile">`
+        )
+      ).toBeTruthy();
 
-    expect(
-      mySecondPostContent.includes(`<img src="/media/frown.png" alt="Frown">`)
-    ).toBeTruthy();
-    expect(
-      mySecondPostContent.includes(
-        `<style>body,h1,h2,h3,h4,h5,h6,p,blockquote,pre,hr,dl,dd,ol,ul,figure{margin:0;`
-      )
-    ).toBeTruthy();
+      expect(
+        mySecondPostContent.includes(`<img src="/media/frown.png" alt="Frown">`)
+      ).toBeTruthy();
+      expect(
+        mySecondPostContent.includes(
+          `<style>body,h1,h2,h3,h4,h5,h6,p,blockquote,pre,hr,dl,dd,ol,ul,figure{margin:0;padding:0;-webkit-font-smoothing:antialiased}`
+        )
+      ).toBeTruthy();
+    });
+
+    it("creates amp.html correctly", () => {
+      const mySecondPostAmpContent = fs.readFileSync(
+        path.join(scaffoldFolder, "_dist/my-second-post/amp.html"),
+        { encoding: "utf-8" }
+      );
+
+      expect(
+        mySecondPostAmpContent.includes(
+          `body,h1,h2,h3,h4,h5,h6,p,blockquote,pre,hr,dl,dd,ol,ul,figure{margin:0;padding:0;-webkit-font-smoothing:antialiased}`
+        )
+      ).toBeTruthy();
+
+      expect(
+        mySecondPostAmpContent.includes(`body { font-family: 'Poly', serif; }`)
+      ).toBeTruthy();
+    });
   });
 
   it("creates rss.xml correctly", () => {

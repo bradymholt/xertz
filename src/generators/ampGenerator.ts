@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import ampify from "@bradymholt/ampify";
-import { ITemplateData } from "../interfaces";
+import { ITemplateData, IPageConfig } from "../interfaces";
 import { TemplateManager } from "../templateManager";
 
 /**
@@ -25,9 +25,9 @@ export class AmpGenerator {
     this.templateManager = templateManager;
   }
 
-  public async generate(templateData: ITemplateData) {
+  public async generate(pageConfig: IPageConfig, templateData: ITemplateData) {
     const applyTemplate = this.templateManager.getTemplate(this.ampLayout);
-    const html = applyTemplate(templateData);
+    const html = applyTemplate(Object.assign({}, pageConfig, templateData));
 
     let ampOutput = await ampify(html, {
       cwd: this.baseSourceDirectory
@@ -36,7 +36,7 @@ export class AmpGenerator {
     fs.writeFileSync(
       path.join(
         this.baseDestDirectory,
-        templateData.path,
+        pageConfig.path,
         AmpGenerator.ampPageName
       ),
       ampOutput
