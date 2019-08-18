@@ -113,8 +113,12 @@ class cli {
     await this.build(".", false);
 
     const contentFolder = path.join(this.cwd, Builder.contentDirectoryName);
+    const layoutsFolder = path.join(this.cwd, Builder.layoutsDirectoryName);
+    const stylesFolder = path.join(this.cwd, Builder.stylesDirectoryName);
     chokidar
-      .watch(contentFolder, { ignoreInitial: true })
+      .watch([contentFolder, layoutsFolder, stylesFolder], {
+        ignoreInitial: true
+      })
       .on("all", (event, path) => {
         console.log(`SERVE: Changed Detected`);
         this.build(".", false);

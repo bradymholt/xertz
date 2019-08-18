@@ -10,11 +10,10 @@ import { ContentGenerator } from "./generators/contentGenerator";
 export class Builder {
   public static readonly distDirectoryName = "_dist";
   public static readonly contentDirectoryName = "content";
+  public static readonly layoutsDirectoryName = "layouts";
+  public static readonly stylesDirectoryName = "styles";
 
   readonly baseDirectory: string;
-  readonly layoutsDirectoryName = "layouts";
-  readonly stylesDirectoryName = "styles";
-
   readonly contentDirectory: string;
   readonly layoutsDirectory: string;
   readonly stylesDirectory: string;
@@ -28,11 +27,11 @@ export class Builder {
     );
     this.layoutsDirectory = path.join(
       this.baseDirectory,
-      this.layoutsDirectoryName
+      Builder.layoutsDirectoryName
     );
     this.stylesDirectory = path.join(
       this.baseDirectory,
-      this.stylesDirectoryName
+      Builder.stylesDirectoryName
     );
     this.distDirectory = path.join(
       this.baseDirectory,
@@ -51,7 +50,7 @@ export class Builder {
     // Styles - process styles first so they are available to the content files later
     const styles: Array<IStyle> = new StylesGenerator().generate(
       this.stylesDirectory,
-      path.join(this.distDirectory, this.stylesDirectoryName)
+      path.join(this.distDirectory, Builder.stylesDirectoryName)
     );
 
     // Content - process the content files
