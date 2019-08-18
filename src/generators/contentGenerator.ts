@@ -91,7 +91,7 @@ export class ContentGenerator {
         currentDirectoryConfig.slug = fileNameMatcher[2];
       }
     }
-    
+
     let overriddenDestDirectory = destDirectory;
     if (currentDirectoryConfig.dist_path) {
       overriddenDestDirectory = path.join(
@@ -214,7 +214,7 @@ export class ContentGenerator {
     const templateData = Object.assign(
       <interfaces.ITemplateData>{},
       this.baseTemplateData,
-      pageConfig      
+      pageConfig
     );
 
     const applyTemplate = this.templateManager.getTemplate(
@@ -301,18 +301,19 @@ export class ContentGenerator {
 
     let markdownContent = parsedMatter.content;
     // Prepend relative image references with path
-
-    // TODO: Exclude http(s)://
     markdownContent = markdownContent
-      .replace(/!\[.+\]\((\w+.*)\)/, (match, filename) => {
-        // Markdown format (![Smile](smile.png) => ![Smile](my-most/smile.png))
+      .replace(/!\[.+\]\(([^"\/\:]+)\)/, (match, filename) => {
+        // Markdown format:
+        //   ![Smile](smile.png) => ![Smile](my-most/smile.png)
         return match.replace(
           filename,
           path.join("/", pageConfig.path, filename)
         );
       })
-      .replace(/<img\s.*\ssrc=\"([^"]+)\"/g, (match, filename) => {
-        // html format (<img src="smile.png" /> => <img src="my-most/smile.png" />)
+      .replace(/[src|href]=\"([^"\/\:]+)\"/g, (match, filename) => {
+        // html (href/src) format:
+        //   <img src="smile.png" /> => <img src="/my-most/smile.png" />
+        //   <a href="IMG_20130526_165208.jpg">Foo</a> => <a href="/my-most/IMG_20130526_165208.jpg">Foo</a>
         return match.replace(
           filename,
           path.join("/", pageConfig.path, filename)

@@ -7,3 +7,4 @@ Hello there.  This is my second post.
 
 
 ![Smile](smile.png)
+![Frown](/media/frown.png)

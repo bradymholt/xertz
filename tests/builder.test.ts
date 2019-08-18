@@ -15,7 +15,9 @@ describe("start", () => {
       fs.existsSync(path.join(scaffoldFolder, "_dist/my-first-post/amp.html"))
     ).toEqual(true);
     expect(
-      fs.existsSync(path.join(scaffoldFolder, "_dist/my-second-post/index.html"))
+      fs.existsSync(
+        path.join(scaffoldFolder, "_dist/my-second-post/index.html")
+      )
     ).toEqual(true);
     expect(
       fs.existsSync(path.join(scaffoldFolder, "_dist/my-second-post/amp.html"))
@@ -41,9 +43,17 @@ describe("start", () => {
       path.join(scaffoldFolder, "_dist/my-second-post/index.html"),
       { encoding: "utf-8" }
     );
+    expect(mySecondPostContent.includes("August 10, 2019")).toBeTruthy();
+
     expect(
       mySecondPostContent.includes(
-        "August 10, 2019"
+        `<img src="/my-second-post/smile.png" alt="Smile">`
+      )
+    ).toBeTruthy();
+
+    expect(
+      mySecondPostContent.includes(
+        `<img src="/media/frown.png" alt="Frown">`
       )
     ).toBeTruthy();
   });
