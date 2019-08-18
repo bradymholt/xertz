@@ -91,8 +91,7 @@ export class ContentGenerator {
         currentDirectoryConfig.slug = fileNameMatcher[2];
       }
     }
-
-    // Determine actualDestDirectory
+    
     let overriddenDestDirectory = destDirectory;
     if (currentDirectoryConfig.dist_path) {
       overriddenDestDirectory = path.join(
@@ -302,6 +301,8 @@ export class ContentGenerator {
 
     let markdownContent = parsedMatter.content;
     // Prepend relative image references with path
+
+    // TODO: Exclude http(s)://
     markdownContent = markdownContent
       .replace(/!\[.+\]\((\w+.*)\)/, (match, filename) => {
         // Markdown format (![Smile](smile.png) => ![Smile](my-most/smile.png))
