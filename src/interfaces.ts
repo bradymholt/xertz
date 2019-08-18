@@ -16,14 +16,14 @@ export interface IFrontMatter {
   path: string;
   slug: string;
   type: string;
-  excerpt: string;
   layout: string;
-
+  excerpt: string;
+  content_html?: string;
   permalink?: string; // alias for "slug"
 }
 
 // Config combined with front matter
-export interface IPageConfig extends IConfig, IFrontMatter {  
+export interface IPageConfig extends IConfig, IFrontMatter {
   filename: string;
   source: string;
   path_amp?: string;
@@ -32,7 +32,6 @@ export interface IPageConfig extends IConfig, IFrontMatter {
 // Config that gets passed into the compiled template
 export interface ITemplateData extends IPageConfig {
   styles?: { [partialName: string]: IStyle };
-  content?: string;
 }
 
 export interface IContentSource {
@@ -40,7 +39,7 @@ export interface IContentSource {
   html: string;
 }
 
-export interface IStyle {  
+export interface IStyle {
   name: string;
   path: string;
   content: string;

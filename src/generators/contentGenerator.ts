@@ -208,12 +208,14 @@ export class ContentGenerator {
 
     const contentFile = this.parseContentFile(pageConfig);
 
+    // TODO: This is going to cause the full content to remain in memory during generation; circle back on how to improve this
+    pageConfig.content_html = contentFile.html;
+
     // Apply template
     const templateData = Object.assign(
       <interfaces.ITemplateData>{},
       this.baseTemplateData,
-      pageConfig,
-      { content: contentFile.html }
+      pageConfig      
     );
 
     const applyTemplate = this.templateManager.getTemplate(
@@ -270,10 +272,12 @@ export class ContentGenerator {
       const currentPageConfig = Object.assign({}, currentDirectoryConfig);
       currentPageConfig.filename = currentFileName;
       currentPageConfig.source = path.join(sourceDirectory, currentFileName);
+
       const { pageConfig, templateData } = this.renderContentFile(
         currentPageConfig,
         actualDestDirectory
       );
+
       if (this.renderAmpPages && this.ampGenerator) {
         try {
           await this.ampGenerator.generate(templateData);
