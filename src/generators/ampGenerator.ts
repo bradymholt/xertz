@@ -8,7 +8,7 @@ import { TemplateManager } from "../templateManager";
  * Generates an AMP page given ITemplateData
  */
 export class AmpGenerator {
-  readonly ampPageName = "amp.html";
+  public static readonly ampPageName = "amp.html";
   readonly ampLayout = "amp";
 
   readonly baseSourceDirectory: string;
@@ -34,7 +34,11 @@ export class AmpGenerator {
     });
 
     fs.writeFileSync(
-      path.join(this.baseDestDirectory, templateData.path, this.ampPageName),
+      path.join(
+        this.baseDestDirectory,
+        templateData.path,
+        AmpGenerator.ampPageName
+      ),
       ampOutput
     );
   }
