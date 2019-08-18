@@ -26,6 +26,12 @@ describe("start", () => {
       fs.existsSync(path.join(scaffoldFolder, "_dist/my-second-post/smile.png"))
     ).toEqual(true);
     expect(
+      fs.existsSync(path.join(scaffoldFolder, "_dist/my-second-post/assets/script.js"))
+    ).toEqual(true);
+    expect(
+      fs.existsSync(path.join(scaffoldFolder, "_dist/my-second-post/assets/style.css"))
+    ).toEqual(true);
+    expect(
       fs.existsSync(path.join(scaffoldFolder, "_dist/projects/index.html"))
     ).toEqual(true);
 
@@ -54,6 +60,11 @@ describe("start", () => {
     expect(
       mySecondPostContent.includes(
         `<img src="/media/frown.png" alt="Frown">`
+      )
+    ).toBeTruthy();
+    expect(
+      mySecondPostContent.includes(
+        `<style>body,h1,h2,h3,h4,h5,h6,p,blockquote,pre,hr,dl,dd,ol,ul,figure{margin:0;`
       )
     ).toBeTruthy();
   });

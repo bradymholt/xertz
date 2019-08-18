@@ -13,9 +13,11 @@ export class Builder {
 
   readonly baseDirectory: string;
   readonly layoutsDirectoryName = "layouts";
+  readonly stylesDirectoryName = "styles";
 
   readonly contentDirectory: string;
   readonly layoutsDirectory: string;
+  readonly stylesDirectory: string;
   readonly distDirectory: string;
 
   constructor(baseDirectory: string) {
@@ -27,6 +29,10 @@ export class Builder {
     this.layoutsDirectory = path.join(
       this.baseDirectory,
       this.layoutsDirectoryName
+    );
+    this.stylesDirectory = path.join(
+      this.baseDirectory,
+      this.stylesDirectoryName
     );
     this.distDirectory = path.join(
       this.baseDirectory,
@@ -41,11 +47,11 @@ export class Builder {
     }
 
     fse.emptyDirSync(this.distDirectory);
-    
+
     // Styles - process styles first so they are available to the content files later
     const styles: Array<IStyle> = new StylesGenerator().generate(
-      this.contentDirectory,
-      this.distDirectory
+      this.stylesDirectory,
+      path.join(this.distDirectory, this.stylesDirectoryName)
     );
 
     // Content - process the content files

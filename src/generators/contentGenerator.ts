@@ -18,7 +18,7 @@ export class ContentGenerator {
   readonly styles: Array<interfaces.IStyle>;
   readonly contentPageName = "index.html";
   readonly contentExtensionsToInclude = ["md"];
-  readonly assetIgnoreExtensions = ["scss", "sass", "css", "md", "hbs"];
+  readonly assetIgnoreExtensions = ["md", "hbs"];
   readonly templateManager: TemplateManager;
   readonly markedRender: marked.Renderer;
   readonly markedHighlighter: ((code: string, lang: string) => string) | null;
@@ -115,7 +115,8 @@ export class ContentGenerator {
     this.processAssetFiles(
       sourceDirectory,
       sourceDirectoryFileNames,
-      overriddenDestDirectory
+      overriddenDestDirectory,
+      isContentPackageDirectory
     );
 
     // Process markdown content files
@@ -237,16 +238,18 @@ export class ContentGenerator {
   private processAssetFiles(
     sourceDirectory: string,
     sourceDirectoryFileNames: string[],
-    actualDestDirectory: string
+    actualDestDirectory: string,
+    includeDirectories = false
   ) {
     const assetFileNames = sourceDirectoryFileNames.filter(
       f =>
         !f.startsWith("_") &&
-        !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
-        !this.assetIgnoreExtensions.includes(path.extname(f).substr(1))
+        !this.assetIgnoreExtensions.includes(path.extname(f).substr(1)) &&
+        (includeDirectories ||
+          !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory())
     );
     for (let currentFileName of assetFileNames) {
-      fse.copyFileSync(
+      fse.copySync(
         path.join(sourceDirectory, currentFileName),
         path.join(actualDestDirectory, currentFileName)
       );
@@ -302,7 +305,7 @@ export class ContentGenerator {
     let markdownContent = parsedMatter.content;
     // Prepend relative image references with path
     markdownContent = markdownContent
-      .replace(/!\[.+\]\(([^"\/\:]+)\)/, (match, filename) => {
+      .replace(/!\[.+\]\(([^"\/\:!]+)\)/g, (match, filename) => {
         // Markdown format:
         //   ![Smile](smile.png) => ![Smile](my-most/smile.png)
         return match.replace(
@@ -310,7 +313,7 @@ export class ContentGenerator {
           path.join("/", pageConfig.path, filename)
         );
       })
-      .replace(/[src|href]=\"([^"\/\:]+)\"/g, (match, filename) => {
+      .replace(/(src|href)=\"([^"\/\:]+)\"/g, (match, attribute, filename) => {
         // html (href/src) format:
         //   <img src="smile.png" /> => <img src="/my-most/smile.png" />
         //   <a href="IMG_20130526_165208.jpg">Foo</a> => <a href="/my-most/IMG_20130526_165208.jpg">Foo</a>
