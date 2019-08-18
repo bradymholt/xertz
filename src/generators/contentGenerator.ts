@@ -1,11 +1,9 @@
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
-
 import marked from "marked";
 import matter from "gray-matter";
 import prismjs from "prismjs";
-
 import { loadConfigFile } from "../configHelper";
 import * as interfaces from "../interfaces";
 import { TemplateGenerator } from "./templateGenerator";
@@ -13,28 +11,27 @@ import { AmpGenerator } from "./ampGenerator";
 import { TemplateManager } from "../templateManager";
 
 export class ContentGenerator {
-  readonly styles: Array<interfaces.IStyle>;
-  readonly contentPageName = "index.html";
-  readonly contentExtensionsToInclude = ["md"];
-
   // Options
   readonly renderAmpPages = true;
   readonly codeHighlight = true;
 
-  initialized = false;
-  baseSourceDirectory = "";
-  baseDestDirectory = "";
-
-  baseTemplateData: interfaces.ITemplateData | null = null;
-  templateGenerator: TemplateGenerator | null = null;
-  ampGenerator: AmpGenerator | null = null;
+  readonly styles: Array<interfaces.IStyle>;
+  readonly contentPageName = "index.html";
+  readonly contentExtensionsToInclude = ["md"];
+  readonly assetIgnoreExtensions = ["scss", "sass", "css", "md", "hbs"];
   readonly templateManager: TemplateManager;
   readonly markedRender: marked.Renderer;
   readonly markedHighlighter: ((code: string, lang: string) => string) | null;
 
+  initialized = false;
+  baseSourceDirectory = "";
+  baseDestDirectory = "";
+  baseTemplateData: interfaces.ITemplateData | null = null;
+  templateGenerator: TemplateGenerator | null = null;
+  ampGenerator: AmpGenerator | null = null;
+
   constructor(styles: Array<interfaces.IStyle>, layoutsDirectory: string) {
     this.styles = styles;
-
     this.templateManager = new TemplateManager(layoutsDirectory);
     this.markedRender = this.getMarkedRender();
     this.markedHighlighter = this.codeHighlight ? this.prismHighlighter : null;
@@ -76,95 +73,61 @@ export class ContentGenerator {
     this.initialize(baseConfig, sourceDirectory, destDirectory);
 
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
-    let currentConfig: interfaces.IPageConfig = <interfaces.IPageConfig>(
-      Object.assign({}, baseConfig, sourceDirectoryConfig, {})
-    );
+    // Merge any _config.yml file in current directory with baseConfig to gather config for current directory
+    let currentDirectoryConfig: interfaces.IPageConfig = <
+      interfaces.IPageConfig
+    >Object.assign({}, baseConfig, sourceDirectoryConfig);
 
-    // The following config cannot be inherited and must be determined for each content file.
-    currentConfig.date = "";
-    currentConfig.slug = "";
-    currentConfig.filename = "";
-
-    const pages: Array<interfaces.IPageConfig> = [];
-    const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
-    const contentFileNames = sourceDirectoryFileNames.filter(
-      f =>
-        !f.startsWith("_") &&
-        !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
-        this.contentExtensionsToInclude.includes(path.extname(f).substr(1))
-    );
-
+    // If this directory contains an index.md file, it is designated as a content package directory.
     const isContentPackageDirectory = fse.existsSync(
       path.join(sourceDirectory, "index.md")
     );
-
     if (isContentPackageDirectory) {
       const fileNameMatcher = path
         .basename(destDirectory)
         .match(/(\d{4}-\d{2}-\d{2})?[_|-]?(.*)/);
       if (fileNameMatcher != null) {
-        currentConfig.date = fileNameMatcher[1];
-        currentConfig.slug = fileNameMatcher[2];
+        currentDirectoryConfig.date = fileNameMatcher[1];
+        currentDirectoryConfig.slug = fileNameMatcher[2];
       }
     }
 
     // Determine actualDestDirectory
-    let actualDestDirectory = destDirectory;
-    if (currentConfig.dist_path) {
-      actualDestDirectory = path.join(
+    let overriddenDestDirectory = destDirectory;
+    if (currentDirectoryConfig.dist_path) {
+      overriddenDestDirectory = path.join(
         this.baseDestDirectory,
-        currentConfig.dist_path.replace(/^\//, "")
+        currentDirectoryConfig.dist_path.replace(/^\//, "")
       );
 
       if (isContentPackageDirectory) {
-        actualDestDirectory = path.join(
-          actualDestDirectory,
-          currentConfig.slug
+        overriddenDestDirectory = path.join(
+          overriddenDestDirectory,
+          currentDirectoryConfig.slug
         );
       }
     }
 
-    fse.ensureDirSync(actualDestDirectory);
+    fse.ensureDirSync(overriddenDestDirectory);
 
-    // copy assets
-    const assetIgnoreExtensions = ["scss", "sass", "css", "md", "hbs"];
-    const assetFileNames = sourceDirectoryFileNames.filter(
-      f =>
-        !f.startsWith("_") &&
-        !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
-        !assetIgnoreExtensions.includes(path.extname(f).substr(1))
+    const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
+
+    // Process asset files
+    this.processAssetFiles(
+      sourceDirectory,
+      sourceDirectoryFileNames,
+      overriddenDestDirectory
     );
-    for (let currentFileName of assetFileNames) {
-      fse.copyFileSync(
-        path.join(sourceDirectory, currentFileName),
-        path.join(actualDestDirectory, currentFileName)
-      );
-    }
 
-    for (let currentFileName of contentFileNames) {
-      const currentPageConfig = Object.assign({}, currentConfig);
-      currentPageConfig.filename = currentFileName;
-      currentPageConfig.source = path.join(sourceDirectory, currentFileName);
+    // Process markdown content files
+    const pages = await this.processContentFiles(
+      sourceDirectory,
+      sourceDirectoryFileNames,
+      overriddenDestDirectory,
+      currentDirectoryConfig
+    );
 
-      const { pageConfig, templateData } = this.renderContentFile(
-        currentPageConfig,
-        actualDestDirectory
-      );
-
-      if (this.renderAmpPages && this.ampGenerator) {
-        try {
-          await this.ampGenerator.generate(templateData);
-        } catch (err) {
-          console.error(
-            `Error generating AMP file for '${currentFileName}' - ${err}`
-          );
-        }
-      }
-      // templateData contains the content and we don't want this to stay in memory
-      pages.push(pageConfig);
-    }
-
-    // Traverse subdirectories and render pages
+    // Traverse subdirectories
     const subDirectoryNames = sourceDirectoryFileNames.filter(f => {
       return fs.statSync(path.join(sourceDirectory, f)).isDirectory();
     });
@@ -173,7 +136,7 @@ export class ContentGenerator {
       const subSourceDirectory = path.join(sourceDirectory, subDirectoryName);
       const subDestDirectory = path.join(destDirectory, subDirectoryName);
       const subContent = await this.generate(
-        currentConfig,
+        currentDirectoryConfig,
         subSourceDirectory,
         subDestDirectory
       );
@@ -186,7 +149,7 @@ export class ContentGenerator {
       this.templateGenerator.generate(
         sourceDirectory,
         destDirectory,
-        currentConfig,
+        currentDirectoryConfig,
         pages
       );
     }
@@ -268,6 +231,62 @@ export class ContentGenerator {
     );
 
     return { pageConfig, templateData };
+  }
+
+  private processAssetFiles(
+    sourceDirectory: string,
+    sourceDirectoryFileNames: string[],
+    actualDestDirectory: string
+  ) {
+    const assetFileNames = sourceDirectoryFileNames.filter(
+      f =>
+        !f.startsWith("_") &&
+        !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
+        !this.assetIgnoreExtensions.includes(path.extname(f).substr(1))
+    );
+    for (let currentFileName of assetFileNames) {
+      fse.copyFileSync(
+        path.join(sourceDirectory, currentFileName),
+        path.join(actualDestDirectory, currentFileName)
+      );
+    }
+    return sourceDirectoryFileNames;
+  }
+
+  private async processContentFiles(
+    sourceDirectory: string,
+    sourceDirectoryFileNames: string[],
+    actualDestDirectory: string,
+    currentDirectoryConfig: interfaces.IPageConfig
+  ) {
+    const pages: Array<interfaces.IPageConfig> = [];
+    const contentFileNames = sourceDirectoryFileNames.filter(
+      f =>
+        !f.startsWith("_") &&
+        !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
+        this.contentExtensionsToInclude.includes(path.extname(f).substr(1))
+    );
+    for (let currentFileName of contentFileNames) {
+      const currentPageConfig = Object.assign({}, currentDirectoryConfig);
+      currentPageConfig.filename = currentFileName;
+      currentPageConfig.source = path.join(sourceDirectory, currentFileName);
+      const { pageConfig, templateData } = this.renderContentFile(
+        currentPageConfig,
+        actualDestDirectory
+      );
+      if (this.renderAmpPages && this.ampGenerator) {
+        try {
+          await this.ampGenerator.generate(templateData);
+        } catch (err) {
+          console.error(
+            `Error generating AMP file for '${currentFileName}' - ${err}`
+          );
+        }
+      }
+      // templateData contains the content and we don't want this to stay in memory
+      pages.push(pageConfig);
+    }
+    return pages;
   }
 
   private parseContentFile(

@@ -15,8 +15,6 @@ export class TemplateGenerator {
   readonly baseTemplateData: ITemplateData;
   readonly templateManager: TemplateManager;
 
-  // Options
-
   constructor(
     baseTemplateData: ITemplateData,
     templateManager: TemplateManager
@@ -44,8 +42,10 @@ export class TemplateGenerator {
     // Sort pages
     pages.sort((first, second) => {
       if (!!first.date && !!second.date) {
+        // by date
         return second.date.localeCompare(first.date, "en", { numeric: true });
       } else {
+        // by filename
         return second.filename.localeCompare(first.filename, "en", {
           numeric: true
         });
