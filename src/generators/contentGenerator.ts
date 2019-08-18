@@ -95,22 +95,21 @@ export class ContentGenerator {
       }
     }
 
-    let overriddenDestDirectory = destDirectory;
     if (currentDirectoryPageConfig.dist_path) {
-      overriddenDestDirectory = path.join(
+      destDirectory = path.join(
         this.baseDestDirectory,
         currentDirectoryPageConfig.dist_path.replace(/^\//, "")
       );
 
       if (isContentPackageDirectory) {
-        overriddenDestDirectory = path.join(
-          overriddenDestDirectory,
+        destDirectory = path.join(
+          destDirectory,
           currentDirectoryPageConfig.slug
         );
       }
     }
 
-    fse.ensureDirSync(overriddenDestDirectory);
+    fse.ensureDirSync(destDirectory);
 
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
 
@@ -118,7 +117,7 @@ export class ContentGenerator {
     this.processAssetFiles(
       sourceDirectory,
       sourceDirectoryFileNames,
-      overriddenDestDirectory,
+      destDirectory,
       isContentPackageDirectory
     );
 
@@ -126,7 +125,7 @@ export class ContentGenerator {
     const pages = await this.processContentFiles(
       sourceDirectory,
       sourceDirectoryFileNames,
-      overriddenDestDirectory,
+      destDirectory,
       currentDirectoryPageConfig,
       isContentPackageDirectory
     );
@@ -166,7 +165,7 @@ export class ContentGenerator {
   private processAssetFiles(
     sourceDirectory: string,
     sourceDirectoryFileNames: string[],
-    overriddenDestDirectory: string,
+    destDirectory: string,
     recursive = false
   ) {
     const assetFileNames = sourceDirectoryFileNames.filter(
@@ -179,7 +178,7 @@ export class ContentGenerator {
     for (let currentFileName of assetFileNames) {
       fse.copySync(
         path.join(sourceDirectory, currentFileName),
-        path.join(overriddenDestDirectory, currentFileName)
+        path.join(destDirectory, currentFileName)
       );
     }
     return sourceDirectoryFileNames;
@@ -188,7 +187,7 @@ export class ContentGenerator {
   private async processContentFiles(
     sourceDirectory: string,
     sourceDirectoryFileNames: string[],
-    overriddenDestDirectory: string,
+    destDirectory: string,
     currentDirectoryConfig: interfaces.IPageConfig,
     isContentPackageDirectory: boolean
   ) {
@@ -206,7 +205,7 @@ export class ContentGenerator {
 
       this.renderContentFile(
         currentPageConfig,
-        overriddenDestDirectory,
+        destDirectory,
         isContentPackageDirectory
       );
       await this.renderAmpFile(currentPageConfig, currentFileName);
@@ -218,7 +217,7 @@ export class ContentGenerator {
 
   private renderContentFile(
     pageConfig: interfaces.IPageConfig,
-    overriddenDestDirectory: string,
+    destDirectory: string,
     isContentPackageDirectory: boolean
   ) {
     if (!pageConfig.slug && pageConfig.permalink) {
@@ -252,15 +251,12 @@ export class ContentGenerator {
     }
 
     if (!isContentPackageDirectory) {
-      overriddenDestDirectory = path.join(
-        overriddenDestDirectory,
-        pageConfig.slug
-      );
+      destDirectory = path.join(destDirectory, pageConfig.slug);
     }
 
     // path is set to directory relative to _dist/ folder in for format: "about-me/"
     pageConfig.path =
-      overriddenDestDirectory.replace(`${this.baseDestDirectory}/`, "") + "/";
+      destDirectory.replace(`${this.baseDestDirectory}/`, "") + "/";
 
     if (this.renderAmpPages) {
       pageConfig.path_amp = pageConfig.path + AmpGenerator.ampPageName;
@@ -284,7 +280,7 @@ export class ContentGenerator {
 
     // Write file
     console.log(path.join(pageConfig.path));
-    const destDirectory = path.join(this.baseDestDirectory, pageConfig.path);
+    destDirectory = path.join(this.baseDestDirectory, pageConfig.path);
     fse.ensureDirSync(destDirectory);
     fs.writeFileSync(
       path.join(destDirectory, this.contentPageName),
