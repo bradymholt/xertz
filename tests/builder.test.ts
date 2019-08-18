@@ -19,7 +19,8 @@ describe("start", () => {
       "my-second-post/smile.png",
       "my-second-post/assets/script.js",
       "my-second-post/assets/style.css",
-      "projects/index.html"
+      "projects/index.html",
+      "posts/index.html"
     ];
     for (let file of expectedFiles) {
       expect(fs.existsSync(path.join(scaffoldFolder, "_dist", file))).toEqual(
@@ -28,20 +29,22 @@ describe("start", () => {
     }
   });
 
-  it("creates about-me/ correctly", () => {
-    const aboutMeContent = fs.readFileSync(
-      path.join(scaffoldFolder, "_dist/about-me/index.html"),
-      { encoding: "utf-8" }
-    );
+  describe("about-me/", () => {
+    it("creates index.html correctly", () => {
+      const aboutMeContent = fs.readFileSync(
+        path.join(scaffoldFolder, "_dist/about-me/index.html"),
+        { encoding: "utf-8" }
+      );
 
-    expect(
-      aboutMeContent.includes(
-        "Hello there.  My name is Brady Holt and I like to blog."
-      )
-    ).toBeTruthy();
+      expect(
+        aboutMeContent.includes(
+          "Hello there.  My name is Brady Holt and I like to blog."
+        )
+      ).toBeTruthy();
+    });
   });
 
-  describe("my-second-post", () => {
+  describe("my-second-post/", () => {
     it("creates index.html correctly", () => {
       const mySecondPostContent = fs.readFileSync(
         path.join(scaffoldFolder, "_dist/my-second-post/index.html"),
@@ -84,16 +87,31 @@ describe("start", () => {
     });
   });
 
-  it("creates rss.xml correctly", () => {
-    const rssContent = fs.readFileSync(
-      path.join(scaffoldFolder, "_dist/rss.xml"),
-      { encoding: "utf-8" }
-    );
+  describe("template pages", () => {
+    it("creates posts/index.html", () => {
+      const postsIndexContent = fs.readFileSync(
+        path.join(scaffoldFolder, "_dist/posts/index.html"),
+        { encoding: "utf-8" }
+      );
 
-    expect(
-      rssContent.includes(
-        `<guid isPermaLink="true">https://www.my-awesome-blog.com/my-first-post/</guid>`
-      )
-    ).toBeTruthy();
+      expect(
+        postsIndexContent.includes(`<a href="/old-post/">My Old Post</a>`)
+      ).toBeTruthy();
+    });
+  });
+
+  describe("rss.xml", () => {
+    it("creates correctly", () => {
+      const rssContent = fs.readFileSync(
+        path.join(scaffoldFolder, "_dist/rss.xml"),
+        { encoding: "utf-8" }
+      );
+
+      expect(
+        rssContent.includes(
+          `<guid isPermaLink="true">https://www.my-awesome-blog.com/my-first-post/</guid>`
+        )
+      ).toBeTruthy();
+    });
   });
 });

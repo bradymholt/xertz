@@ -72,6 +72,8 @@ export class ContentGenerator {
     sourceDirectory: string,
     destDirectory: string
   ) {
+    const originalDestDirectory = destDirectory;
+
     let sourceDirectoryConfig = loadConfigFile(sourceDirectory);
     // Merge any _config.yml file in current directory with baseConfig to gather config for current directory
     let currentDirectoryPageConfig = Object.assign(
@@ -154,7 +156,9 @@ export class ContentGenerator {
     if (this.templateGenerator) {
       this.templateGenerator.generate(
         sourceDirectory,
-        destDirectory,
+        // TODO: This behavior is not obvious
+        // Templates gen generated in the original destination directory and ignore any dist_path config;
+        originalDestDirectory,
         currentDirectoryPageConfig,
         pages
       );
