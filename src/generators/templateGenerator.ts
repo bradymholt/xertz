@@ -114,7 +114,7 @@ export class TemplateGenerator {
     } else {
       const templateLayout = this.templateManager.getTemplate(layout);
       templateLayoutOutput = templateLayout(
-        Object.assign(templateData, { content: templatePartialOutput })
+        Object.assign(templateData, { content_html: templatePartialOutput })
       );
     }
 
