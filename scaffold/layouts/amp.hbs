@@ -1,35 +1,35 @@
 <!doctype html>
 <html amp lang="en">
+
 <head>
-    <meta charset="utf-8">
-    <title>{{title}}</title>
-    <link rel="canonical" href="{{site_url}}/{{path}}" />
-    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-    <link href='https://fonts.googleapis.com/css?family=Poly' rel='stylesheet'>
-    <style amp-custom>       
-        body { font-family: 'Poly', serif; }
-        .site-header { background-color: #237ab2; color: #e7e9ec; padding: 5px; font-weight: 100; border-bottom: 3px solid #f68905; }
-        .site-description { font-size: .5em;}        
-        .post-content { padding: 10px; }
-    </style>   
-    <script async src="https://cdn.ampproject.org/v0.js"></script>
-    <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <link rel="canonical" href="{{ site_url }}/{{ path }}" />
+  <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+  <style>{{{ styles.default.content }}} {{{ styles.prism.content }}} .site-header img { margin-top: 0px; }</style>
+  <link href="/styles/prism.css" rel="stylesheet" />
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
 </head>
 
 <body>
-    {{> header}}
-    <h1 class="post-title">
-        {{title}}
-    </h1>
-    <div class="post-content">
-      <span>
-          <i>{{date}}</i>
-      </span>
+  <div class="main-container">
+    {{> header }}
+    {{> sidebar }}
+    <article class="post amp">
+      <h1>
+        {{ title }}
+      </h1>
+      {{#if date }}
+      <p>
+        <time class="post-date" datetime="{{ date }}">{{ dateFormat this.date "mmmm d, yyyy" }}</time>
+      </p>
+      {{/if}}
       {{{ content_html }}}
-    </div>
-    {{> footer}}
+    </article>
+    {{> footer }}
     <amp-analytics type="googleanalytics">
-        <script type="application/json">
+      <script type="application/json">
         { "vars": {
             "account": "{{ google_analytics_id }}"
             },
@@ -42,6 +42,9 @@
         }
         </script>
     </amp-analytics>
+
+  </div>
+
 </body>
 
 </html>
