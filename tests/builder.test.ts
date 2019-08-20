@@ -23,9 +23,18 @@ describe("start", () => {
       "posts/index.html"
     ];
     for (let file of expectedFiles) {
-      expect(fs.existsSync(path.join(scaffoldFolder, "_dist", file))).toEqual(
-        true
-      );
+      expect(
+        fs.existsSync(path.join(scaffoldFolder, "_dist", file))
+      ).toBeTruthy();
+    }
+  });
+
+  it("skips expected files", async () => {
+    const notExpectedFiles = ["2019-08-02-draft-post"];
+    for (let file of notExpectedFiles) {
+      expect(
+        fs.existsSync(path.join(scaffoldFolder, "_dist", file))
+      ).toBeFalsy();
     }
   });
 
