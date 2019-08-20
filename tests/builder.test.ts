@@ -84,6 +84,12 @@ describe("start", () => {
       expect(
         mySecondPostAmpContent.includes(`body { font-family: 'Poly', serif; }`)
       ).toBeTruthy();
+
+      expect(
+        mySecondPostAmpContent.includes(
+          `<amp-img src="/my-second-post/smile.png" alt="Smile" width="256" height="256"></amp-img>`
+        )
+      ).toBeTruthy();
     });
   });
 

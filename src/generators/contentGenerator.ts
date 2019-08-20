@@ -257,6 +257,7 @@ export class ContentGenerator {
 
     if (!isContentPackageDirectory) {
       destDirectory = path.join(destDirectory, pageConfig.slug);
+    } else {
     }
 
     // path is set to directory relative to _dist/ folder in for format: "about-me/"

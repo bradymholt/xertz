@@ -25,7 +25,7 @@ export interface IFrontMatter {
 // Config combined with front matter
 export interface IPageConfig extends IConfig, IFrontMatter {
   filename: string;
-  source: string;
+  source: string;    
   path_amp?: string;
 }
 

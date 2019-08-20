@@ -81,6 +81,7 @@ export class TemplateGenerator {
       {
         base_path: "",
         source: "",
+        base_source_dir: "",
         filename: currentFileName
       },
       currentConfig,

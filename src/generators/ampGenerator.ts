@@ -30,7 +30,9 @@ export class AmpGenerator {
     const html = applyTemplate(Object.assign({}, pageConfig, templateData));
 
     let ampOutput = await ampify(html, {
-      cwd: this.baseSourceDirectory
+      // TODO: We're passing the destination directory to ampify which it will read from.  I'd
+      // prefer to feed only source directory files in to any build time processing but this is easier.  Circle back and re-evalulate this.
+      cwd: this.baseDestDirectory
     });
 
     fs.writeFileSync(
