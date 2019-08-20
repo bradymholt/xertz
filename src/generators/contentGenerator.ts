@@ -137,7 +137,10 @@ export class ContentGenerator {
     // Traverse subdirectories if this is not a content package directory
     if (!isContentPackageDirectory) {
       const subDirectoryNames = sourceDirectoryFileNames.filter(f => {
-        return     !f.startsWith("_") && fs.statSync(path.join(sourceDirectory, f)).isDirectory()
+        return (
+          !f.startsWith("_") &&
+          fs.statSync(path.join(sourceDirectory, f)).isDirectory()
+        );
       });
 
       for (let subDirectoryName of subDirectoryNames) {
