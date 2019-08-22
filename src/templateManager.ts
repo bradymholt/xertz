@@ -38,7 +38,7 @@ export class TemplateManager {
   }
 
   public initializeTemplate(templateContent: string) {
-    const applyTemplate = handlebars.compile(templateContent);
+    const applyTemplate = handlebars.compile(templateContent, { preventIndent: true });
     return applyTemplate;
   }
 

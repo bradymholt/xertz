@@ -7,6 +7,7 @@ export default function register() {
   handlebars.registerHelper("iif", iif);
   handlebars.registerHelper("dateFormat", dateFormat);
   handlebars.registerHelper("group", group);
+  handlebars.registerHelper("indent", indent);
 }
 
 export function limit(arr: Array<any>, limit: number) {
@@ -40,6 +41,23 @@ export function dateFormat(dateString: string, format: string = "mm/dd/yyyy") {
     format = "UTC:" + format;
   }
   return dateformat(date, format);
+}
+
+/**
+ * indent - Intents each newline in a string by a specified witdh
+ * @param input  - The string to be indented on each line
+ * @param width 
+ * @param indeentationChar 
+ */
+export function indent(input: string, width: number, indeentationChar: string) {
+  const intendation = new Array(
+    width === undefined || isNaN(width) ? 0 : Number(width) + 1
+  ).join(
+    indeentationChar === undefined || typeof indeentationChar !== "string"
+      ? " "
+      : indeentationChar
+  );
+  return input.replace(/\n/g, `\n${intendation}`);
 }
 
 /**
