@@ -94,7 +94,7 @@ export class ContentGenerator {
         .match(/(\d{4}-\d{2}-\d{2})?[_|-]?(.*)/);
       if (fileNameMatcher != null) {
         currentDirectoryPageConfig.date = fileNameMatcher[1];
-        currentDirectoryPageConfig.slug = fileNameMatcher[2];
+        currentDirectoryPageConfig.slug = (fileNameMatcher[2] || "").toLowerCase()
       }
     }
 
@@ -250,6 +250,9 @@ export class ContentGenerator {
       }
     }
 
+    // Ensure slug is lower case
+    pageConfig.slug = pageConfig.slug.toLowerCase();
+
     if (!pageConfig.title) {
       // If page title not available use file name slug
       pageConfig.title = pageConfig.slug;
@@ -267,6 +270,8 @@ export class ContentGenerator {
     // path is set to directory relative to _dist/ folder in for format: "about-me/"
     pageConfig.path =
       destDirectory.replace(`${this.baseDestDirectory}/`, "") + "/";
+    // path should always be lower case
+    pageConfig.path = pageConfig.path.toLowerCase();
 
     if (this.renderAmpPages) {
       pageConfig.path_amp = pageConfig.path + AmpGenerator.ampPageName;

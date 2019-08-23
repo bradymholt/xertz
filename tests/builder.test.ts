@@ -19,6 +19,7 @@ describe("start", () => {
       "my-second-post/smile.png",
       "my-second-post/assets/script.js",
       "my-second-post/assets/style.css",
+      "my-third-post/index.html",
       "projects/index.html",
       "posts/index.html"
     ];
