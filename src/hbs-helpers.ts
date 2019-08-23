@@ -50,6 +50,10 @@ export function dateFormat(dateString: string, format: string = "mm/dd/yyyy") {
  * @param indeentationChar
  */
 export function indent(input: string, width: number, indeentationChar: string) {
+  if (!input){
+    return input;
+  }
+  
   const intendation = new Array(
     width === undefined || isNaN(width) ? 0 : Number(width) + 1
   ).join(
