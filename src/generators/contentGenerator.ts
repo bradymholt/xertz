@@ -425,7 +425,15 @@ export class ContentGenerator {
       }
 
       const className = options.langPrefix + lang;
-      return `<pre class="${className}"><code class="${className}">${code}</code></pre>`;
+      const codeWithNewlineHints = code.replace(
+        /\n/g,
+        // Prepend each newline with a zero-width space character so we can signal to any upstream formatting to leave the formatted code alone.
+        "\u200b\n"
+      );
+
+      return `
+<pre class="${className}"><code class="${className}">${codeWithNewlineHints}</code></pre>
+`;
     };
     return renderer;
   }

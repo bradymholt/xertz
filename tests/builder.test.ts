@@ -76,6 +76,9 @@ describe("start", () => {
           `<style>body,h1,h2,h3,h4,h5,h6,p,blockquote,pre,hr,dl,dd,ol,ul,figure{margin:0;padding:0;-webkit-font-smoothing:antialiased}`
         )
       ).toBeTruthy();
+
+      // Does not indent formatted code
+      expect(mySecondPostContent.match(/^console\<span/m)).toBeTruthy();
     });
 
     it("creates amp.html correctly", () => {

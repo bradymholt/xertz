@@ -46,8 +46,8 @@ export function dateFormat(dateString: string, format: string = "mm/dd/yyyy") {
 /**
  * indent - Intents each newline in a string by a specified witdh
  * @param input  - The string to be indented on each line
- * @param width 
- * @param indeentationChar 
+ * @param width
+ * @param indeentationChar
  */
 export function indent(input: string, width: number, indeentationChar: string) {
   const intendation = new Array(
@@ -57,7 +57,12 @@ export function indent(input: string, width: number, indeentationChar: string) {
       ? " "
       : indeentationChar
   );
-  return input.replace(/\n/g, `\n${intendation}`);
+  // If newline is not preceeded by a zero width character (\u200b) then add indention
+  const indented = input.replace(/[^\u200b]\n/g, match =>
+    match.replace(/\n/, `\n${intendation}`)
+  );
+
+  return indented;
 }
 
 /**
