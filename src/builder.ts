@@ -10,7 +10,7 @@ import { ContentGenerator } from "./generators/contentGenerator";
 export class Builder {
   public static readonly distDirectoryName = "_dist";
   public static readonly contentDirectoryName = "content";
-  public static readonly layoutsDirectoryName = "layouts";
+  public static readonly layoutsDirectoryName = "_layouts";
   public static readonly stylesDirectoryName = "styles";
 
   readonly baseDirectory: string;
@@ -21,10 +21,7 @@ export class Builder {
 
   constructor(baseDirectory: string) {
     this.baseDirectory = baseDirectory;
-    this.contentDirectory = path.join(
-      this.baseDirectory,
-      Builder.contentDirectoryName
-    );
+    this.contentDirectory = this.baseDirectory;
     this.layoutsDirectory = path.join(
       this.baseDirectory,
       Builder.layoutsDirectoryName
@@ -57,6 +54,7 @@ export class Builder {
     const contentGenerator = new ContentGenerator(
       baseConfig,
       styles,
+      this.stylesDirectory,
       this.layoutsDirectory,
       this.contentDirectory,
       this.distDirectory

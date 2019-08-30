@@ -6,3 +6,5 @@ site_url: https://www.my-awesome-blog.com
 google_analytics_id: UA-12345678-1
 rss_path: rss.xml
 sitemap_path: sitemap.xml
+ignore_filenames:
+  - netlify.toml

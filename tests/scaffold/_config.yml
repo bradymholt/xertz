@@ -6,3 +6,5 @@ site_author: Brady Holt
 google_analytics_id: UA-12345678-1
 rss_path: rss.xml
 sitemap_path: sitemap.xml
+ignore_filenames:
+  - ignoreme.toml

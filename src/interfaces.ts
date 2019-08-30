@@ -5,6 +5,7 @@ export interface IConfig {
   site_url: string;
   site_author: string;
   dist_path?: string;
+  ignore_filenames?: string[];
 }
 
 // Config found in .md front-matter
@@ -25,7 +26,7 @@ export interface IFrontMatter {
 // Config combined with front matter
 export interface IPageConfig extends IConfig, IFrontMatter {
   filename: string;
-  source: string;    
+  source: string;
   path_amp?: string;
 }
 

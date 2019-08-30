@@ -31,7 +31,7 @@ describe("start", () => {
   });
 
   it("skips expected files", async () => {
-    const notExpectedFiles = ["2019-08-02-draft-post"];
+    const notExpectedFiles = ["2019-08-02-draft-post", "ignoreme.toml"];
     for (let file of notExpectedFiles) {
       expect(
         fs.existsSync(path.join(scaffoldFolder, "_dist", file))

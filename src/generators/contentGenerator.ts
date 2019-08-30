@@ -17,7 +17,7 @@ export class ContentGenerator {
 
   readonly styles: Array<interfaces.IStyle>;
   readonly contentPageName = "index.html";
-  readonly ignorePrefix = "_";
+  readonly ignorePrefixes = [".", "_"];
   readonly contentExtensionsToInclude = ["md"];
   readonly assetIgnoreExtensions = ["md", "hbs"];
   readonly templateManager: TemplateManager;
@@ -25,6 +25,7 @@ export class ContentGenerator {
   readonly markedHighlighter: ((code: string, lang: string) => string) | null;
 
   readonly baseConfig: interfaces.IConfig;
+  readonly stylesDirectory: string;
   readonly baseSourceDirectory: string;
   readonly baseDestDirectory: string;
   readonly baseTemplateData: interfaces.ITemplateData;
@@ -34,11 +35,13 @@ export class ContentGenerator {
   constructor(
     baseConfig: interfaces.IConfig,
     styles: Array<interfaces.IStyle>,
+    stylesDirectory: string,
     layoutsDirectory: string,
     sourceDirectory: string,
     destDirectory: string
   ) {
     this.styles = styles;
+    this.stylesDirectory = stylesDirectory;
     this.templateManager = new TemplateManager(layoutsDirectory);
     this.markedRender = this.getMarkedRender();
     this.markedHighlighter = this.codeHighlight ? this.prismHighlighter : null;
@@ -94,7 +97,9 @@ export class ContentGenerator {
         .match(/(\d{4}-\d{2}-\d{2})?[_|-]?(.*)/);
       if (fileNameMatcher != null) {
         currentDirectoryPageConfig.date = fileNameMatcher[1];
-        currentDirectoryPageConfig.slug = (fileNameMatcher[2] || "").toLowerCase()
+        currentDirectoryPageConfig.slug = (
+          fileNameMatcher[2] || ""
+        ).toLowerCase();
       }
     }
 
@@ -138,7 +143,8 @@ export class ContentGenerator {
     if (!isContentPackageDirectory) {
       const subDirectoryNames = sourceDirectoryFileNames.filter(f => {
         return (
-          !f.startsWith("_") &&
+          this.ignorePrefixes.findIndex(i => f.startsWith(i)) == -1 &&
+          path.join(sourceDirectory, f) != this.stylesDirectory &&
           fs.statSync(path.join(sourceDirectory, f)).isDirectory()
         );
       });
@@ -179,8 +185,10 @@ export class ContentGenerator {
   ) {
     const assetFileNames = sourceDirectoryFileNames.filter(
       f =>
-        !f.startsWith("_") &&
+        this.ignorePrefixes.findIndex(i => f.startsWith(i)) == -1 &&
         !this.assetIgnoreExtensions.includes(path.extname(f).substr(1)) &&
+        (!this.baseConfig.ignore_filenames ||
+          !this.baseConfig.ignore_filenames.includes(f)) &&
         (recursive ||
           !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory())
     );
@@ -203,7 +211,7 @@ export class ContentGenerator {
     const pages: Array<interfaces.IPageConfig> = [];
     const contentFileNames = sourceDirectoryFileNames.filter(
       f =>
-        !f.startsWith("_") &&
+        this.ignorePrefixes.findIndex(i => f.startsWith(i)) == -1 &&
         !fs.lstatSync(path.join(sourceDirectory, f)).isDirectory() &&
         this.contentExtensionsToInclude.includes(path.extname(f).substr(1))
     );
@@ -389,9 +397,7 @@ export class ContentGenerator {
         );
       } catch (err) {
         console.error(
-          `Error generating AMP file for '${
-            currentPageConfig.path_amp
-          }' - ${err}`
+          `Error generating AMP file for '${currentPageConfig.path_amp}' - ${err}`
         );
       }
     }

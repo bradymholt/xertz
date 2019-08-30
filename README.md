@@ -28,16 +28,20 @@ When you initialize a xertz site, a directory will created that looks like this:
 
 ```
 |-- my_site
-  |-- _config.yml  
-  |-- content
-  |-- layouts    
-  |-- styles        
+  |-- _layouts
+  |-- media
+  |-- posts
+  |-- styles
+  |-- _config.yml
+  |-- index.html.hbs
 ```
 
-- *config.yml* - This is the base config file.
-- *content* - This is the main folder for pages and posts.
-- *layouts* - This folder contains Handlebars layouts which will be used to contruct rendered pages.
+- *_layouts* - This folder contains Handlebars layouts which will be used to contruct rendered pages.
+- *media* - This is folder that is indented to hold images and other assets.  The folder will be emitted as is.
+- *posts* - This is folder that is indented to blog posts.
 - *styles* - CSS files can be placed here and will be be made available in the template data.
+- *_config.yml* - This is the base config file.
+- *index.html.hbs* - This is the main index page for the site.
 
 ### Config
 
@@ -47,15 +51,11 @@ Configuration comes from one of these places, in order of precedence:
 - _config.yml file in content directory or subdirectory
 - Markdown file yaml Front Matter
 
-### Content
-
-This folder is the source for the final output.  
-
-#### Templates
+### Templates
 
 A file with the `html.hbs` extension will be processed as a Handlebars template and have access to `pages` data which will be an array of all pages in the current and subdirectories.
 
-#### Markdown
+### Markdown
 
 - A file can have a date prefix in its name which will set the `date` variable.
 - By default, the name of the file (minus any date prefix) will be used as the `slug` variable and effect the output path.
@@ -91,7 +91,7 @@ Any file with a `_` prefix is ignored.
 
 ### Styles
 
-CSS and SaSS can be placed within the `content/` folder but when it is placed in the `styles/` folder you have access to the styles within templates.  This is useful, for example, if you want to inline your styles within a template with `<style/>` rather than linking to a path with `<link rel="stylesheet"/>`.
+CSS and SaSS can be placed within any folder but when it is placed in the `styles/` folder you have access to the styles within templates.  This is useful, for example, if you want to inline your styles within a template with `<style/>` rather than linking to a path with `<link rel="stylesheet"/>`.
 
 Any file with a `_` prefix is ignored.
 
