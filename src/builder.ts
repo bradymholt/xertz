@@ -9,7 +9,6 @@ import { ContentGenerator } from "./generators/contentGenerator";
 
 export class Builder {
   public static readonly distDirectoryName = "_dist";
-  public static readonly contentDirectoryName = "content";
   public static readonly layoutsDirectoryName = "_layouts";
   public static readonly stylesDirectoryName = "styles";
 

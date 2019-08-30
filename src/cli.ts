@@ -76,18 +76,17 @@ class cli {
       }
     });
 
-    // Add today's date in the example content file
-    const postsRelativePath = path.join(Builder.contentDirectoryName, "posts");
+    // Add today's date in the example content file    
 
     fse.renameSync(
       path.join(
         targetDirectoryPath,
-        postsRelativePath,
+        "posts",
         this.scaffoldContentExampleFileName
       ),
       path.join(
         targetDirectoryPath,
-        postsRelativePath,
+        "posts",
         this.scaffoldContentExampleFileName.replace(
           "YYYY-MM-DD",
           getCurrentDateInISOFormat()
@@ -111,12 +110,9 @@ class cli {
 
   async serve(preferredPortNumber: string) {
     await this.build(".", false);
-
-    const contentFolder = path.join(this.cwd, Builder.contentDirectoryName);
-    const layoutsFolder = path.join(this.cwd, Builder.layoutsDirectoryName);
-    const stylesFolder = path.join(this.cwd, Builder.stylesDirectoryName);
+    
     chokidar
-      .watch([contentFolder, layoutsFolder, stylesFolder], {
+      .watch([path.join(this.cwd)], {
         ignoreInitial: true
       })
       .on("all", (event, path) => {
