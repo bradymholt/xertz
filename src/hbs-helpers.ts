@@ -8,6 +8,7 @@ export default function register() {
   handlebars.registerHelper("dateFormat", dateFormat);
   handlebars.registerHelper("group", group);
   handlebars.registerHelper("indent", indent);
+  handlebars.registerHelper("encodeURI", encodeURI);
 }
 
 export function limit(arr: Array<any>, limit: number) {
@@ -50,10 +51,10 @@ export function dateFormat(dateString: string, format: string = "mm/dd/yyyy") {
  * @param indeentationChar
  */
 export function indent(input: string, width: number, indeentationChar: string) {
-  if (!input){
+  if (!input) {
     return input;
   }
-  
+
   const intendation = new Array(
     width === undefined || isNaN(width) ? 0 : Number(width) + 1
   ).join(
@@ -130,4 +131,12 @@ export function group(list: Array<any>, options: any) {
   list.forEach(groupKey);
 
   return keys.reduce(renderGroup, "");
+}
+
+/**
+ * @method encodeURI
+ * @param {String} uri 
+ */
+export function encodeURI(uri:string) {
+  return encodeURIComponent(uri);
 }

@@ -113,7 +113,7 @@ class cli {
     
     chokidar
       .watch([path.join(this.cwd)], {
-        ignoreInitial: true
+        ignoreInitial: true,        
       })
       .on("all", (event, path) => {
         console.log(`SERVE: Changed Detected`);
