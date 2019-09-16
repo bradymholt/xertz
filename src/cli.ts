@@ -76,7 +76,7 @@ class cli {
       }
     });
 
-    // Add today's date in the example content file    
+    // Add today's date in the example content file
 
     fse.renameSync(
       path.join(
@@ -110,10 +110,13 @@ class cli {
 
   async serve(preferredPortNumber: string) {
     await this.build(".", false);
-    
+
+    const distFolder = path.join(this.cwd, Builder.distDirectoryName);
+
     chokidar
       .watch([path.join(this.cwd)], {
-        ignoreInitial: true,        
+        ignoreInitial: true,
+        ignored: distFolder
       })
       .on("all", (event, path) => {
         console.log(`SERVE: Changed Detected`);
@@ -121,7 +124,7 @@ class cli {
       });
 
     const expressApp = express();
-    const distFolder = path.join(this.cwd, Builder.distDirectoryName);
+
     expressApp.use(express.static(distFolder));
     const portNumber = Number(preferredPortNumber) || 8080;
     expressApp.listen(portNumber);
