@@ -125,7 +125,7 @@ This is a new post.
       }
     );
 
-    console.log(`NEW: Done!  Created ${path.join(postsPath, postSlug)}`);
+    console.log(`NEW: Done!  Created ${postPath}`);
   }
 
   async build(sourceDirectory: string, exit = true) {
@@ -170,6 +170,7 @@ Version: ${pkg.version}
     The following options are available:
 
     init
+    new
     build
     serve
     help
