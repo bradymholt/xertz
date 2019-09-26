@@ -5,7 +5,8 @@ on:
     branches:
       - master
     paths:
-      - '*'    
+      - '*'
+      # Only if a file other than package.json was changed
       - '!package.json'
 jobs:
   npm:
@@ -24,6 +25,7 @@ jobs:
           git push origin master        
         env:
           CI: true
+          NPM_API_TOKEN: ${{ secrets.NPM_API_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: npm publish        
         run: |
