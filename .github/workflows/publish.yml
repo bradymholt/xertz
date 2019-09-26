@@ -1,11 +1,11 @@
-name: Publish to npm
+name: Publish to Registry
 
 on:
   push:
     branches:
       - master
 jobs:
-  build:
+  npm:
     runs-on: ubuntu-latest    
     steps:
     - uses: actions/checkout@v1
