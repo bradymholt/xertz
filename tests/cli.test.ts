@@ -49,13 +49,3 @@ describe("init", () => {
     }
   });
 });
-
-// path.join(
-//   targetDirectoryPath,
-//   "posts",
-//   this.scaffoldContentExampleFileName.replace(
-//     "YYYY-MM-DD",
-//     getCurrentDateInISOFormat()
-//   )
-// )
-// /Users/bholt/dev/xertz/tests/tmp_init/posts/YYYY-MM-DD-my-first-post.md
