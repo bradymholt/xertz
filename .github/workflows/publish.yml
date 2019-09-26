@@ -24,7 +24,8 @@ jobs:
           git config user.name "Brady Holt"
           git config user.email "brady.holt@gmail.com"          
           npm version minor --force -m "Version %s"
-          git push origin HEAD:master --tags
+          git remote add gh-origin https://${GITHUB_TOKEN}@github.com/xertz.git
+          git push gh-origin HEAD:master --tags
         env:
           CI: true
           NPM_API_TOKEN: ${{ secrets.NPM_API_TOKEN }}

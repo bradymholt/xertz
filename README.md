@@ -106,5 +106,3 @@ The following Handlebars helpers are made available in xertz:
 - indent - `{{{ indent my_text 4 }}}`
 - group - `{{#group pages by="year"}}`
 - encodeURI - `{{#encodeURI site_url}}`
-
-
