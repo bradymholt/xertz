@@ -24,7 +24,7 @@ jobs:
           git config user.name "Brady Holt"
           git config user.email "brady.holt@gmail.com"          
           npm version minor --force -m "Version %s"
-          git push origin master        
+          git push origin master --tags
         env:
           CI: true
           NPM_API_TOKEN: ${{ secrets.NPM_API_TOKEN }}
