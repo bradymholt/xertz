@@ -1,16 +1,12 @@
-name: Node CI
+name: Continuous Integration
 
-on: [push]
-
+on: push
 jobs:
-  build:
-
+  test:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [8, 10, 12]
-
     steps:
     - uses: actions/checkout@v1
     - name: Use Node.js ${{ matrix.node-version }}
