@@ -53,15 +53,13 @@ class cli {
 
   init(targetDirectoryName: string) {
     if (!targetDirectoryName) {
-      this.exitWithError("ERROR: target directory is required!");
-      return;
+      this.exitWithError("ERROR: target directory is required!");      
     }
 
     const targetDirectoryPath = path.resolve(this.cwd, targetDirectoryName);
 
     if (fse.pathExistsSync(targetDirectoryPath)) {
-      this.exitWithError(`ERROR: ${targetDirectoryPath} already exists.`);
-      return;
+      this.exitWithError(`ERROR: ${targetDirectoryPath} already exists.`);      
     }
 
     const scaffoldDirectory = path.resolve(
@@ -69,6 +67,7 @@ class cli {
       "../",
       this.scaffoldDirectoryName
     );
+
     fse.copySync(scaffoldDirectory, targetDirectoryPath, {
       filter: (src: string, dest: string) => {
         const name = path.parse(src).name;
@@ -77,7 +76,6 @@ class cli {
     });
 
     // Add today's date in the example content file
-
     fse.renameSync(
       path.join(
         targetDirectoryPath,
