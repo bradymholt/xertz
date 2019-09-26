@@ -83,7 +83,7 @@ The `2019-03-13-crazy-pets/` folder is considered a Content Package Directory.  
   |-- doggy_do_little.jpg  
 ```
 
-and accessble at https://youdomain.com/crazy-pets/
+and accessible at https://youdomain.com/crazy-pets/
 
 ### Layouts
 
