@@ -109,3 +109,4 @@ The following Handlebars helpers are made available in xertz:
 - group - `{{#group pages by="year"}}`
 - encodeURI - `{{#encodeURI site_url}}`
 
+
