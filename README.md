@@ -12,6 +12,8 @@ xertz requires Node.js to be installed and is distributed on [npm](https://npmjs
 
 `npx xertz init [folder_name]` - Initializes a new xertz project
 
+`npx xertz new [Post Title]` - Create a new folder in posts/.
+
 `npx xertz serve` - Builds and serves a xertz project on http://localhost:8080.  Also watches and rebuilds on any changes.
 
 `npx xertz build` - Buids a xertz project and outputs to `_dist` folder.
