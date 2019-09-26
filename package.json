@@ -11,7 +11,8 @@
   "bin": "bin/start.js",
   "files": [
     "bin/**/*.js",
-    "dist/"
+    "dist/",
+    "scaffold/"
   ],
   "scripts": {
     "build_scaffold": "npx ts-node --files ./bin/start.ts build scaffold",
