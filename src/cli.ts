@@ -34,6 +34,9 @@ class cli {
       case "init":
         this.init(this.args[1]);
         break;
+      case "new":
+        this.newPost(this.args[1]);
+        break;
       case "build":
         await this.build(this.args[1] || ".");
         break;
@@ -53,13 +56,13 @@ class cli {
 
   init(targetDirectoryName: string) {
     if (!targetDirectoryName) {
-      this.exitWithError("ERROR: target directory is required!");      
+      this.exitWithError("ERROR: target directory is required!");
     }
 
     const targetDirectoryPath = path.resolve(this.cwd, targetDirectoryName);
 
     if (fse.pathExistsSync(targetDirectoryPath)) {
-      this.exitWithError(`ERROR: ${targetDirectoryPath} already exists.`);      
+      this.exitWithError(`ERROR: ${targetDirectoryPath} already exists.`);
     }
 
     const scaffoldDirectory = path.resolve(
@@ -94,6 +97,35 @@ class cli {
 
     console.log(`INIT: Done! Start blogging with ${pkg.name}.`);
     process.exit();
+  }
+
+  newPost(title: string) {
+    const postsPath = path.join(this.cwd, "posts");
+    if (!title) {
+      title = "My New Post";
+    }
+    const postSlug = title.toLocaleLowerCase().replace(/\s/g, "-");
+    const postPath = path.join(
+      postsPath,
+      `${getCurrentDateInISOFormat()}-${postSlug}`
+    );
+
+    fse.ensureDirSync(postPath);
+    fse.writeFileSync(
+      path.join(postPath, "index.md"),
+      `\
+---
+title: ${title}
+---
+
+This is a new post.
+`,
+      {
+        encoding: "utf-8"
+      }
+    );
+
+    console.log(`NEW: Done!  Created ${path.join(postsPath, postSlug)}`);
   }
 
   async build(sourceDirectory: string, exit = true) {

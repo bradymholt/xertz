@@ -49,3 +49,24 @@ describe("init", () => {
     }
   });
 });
+
+describe("new", () => {
+  it("creates new post directory", () => {
+    const expectedPostDirectory = `posts/${getCurrentDateInISOFormat()}-my-new-post`;
+    try {
+      const cli = init(path.join(__dirname, "scaffold"), [
+        "new",
+        "My New Post"
+      ]);
+      cli.run();
+
+      expect(
+        fs.existsSync(
+          path.join(__dirname, "scaffold", expectedPostDirectory, "index.md")
+        )
+      ).toBeTruthy();
+    } finally {
+      //fse.removeSync(path.join(__dirname, "scaffold", expectedPostDirectory));
+    }
+  });
+});
