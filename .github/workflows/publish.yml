@@ -21,4 +21,4 @@ jobs:
           npm publish
         env:
           CI: true
-          NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+          NPM_API_TOKEN: ${{ secrets.NPM_API_TOKEN }}
