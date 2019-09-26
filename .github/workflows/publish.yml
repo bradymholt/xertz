@@ -1,34 +1,31 @@
 name: Publish to Registry
 
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - master
+    paths:
+      - '*'    
+      - '!package.json'
 jobs:
   npm:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-        if: github.event.pull_request.merged
-      - name: Use Node.js
-        if: github.event.pull_request.merged
+      - uses: actions/checkout@v1        
+      - name: Use Node.js        
         uses: actions/setup-node@v1
         with:
           node-version: 8        
-      - name: npm install
-        if: github.event.pull_request.merged
+      - name: npm install      
         run: npm install
-      - name: npm version
-        if: github.event.pull_request.merged
+      - name: npm version        
         run: |
           npm version minor --force
           git push origin master        
         env:
           CI: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: npm publish
-        if: github.event.pull_request.merged
+      - name: npm publish        
         run: |
           npm config set //registry.npmjs.org/:_authToken=$NPM_API_TOKEN
           npm publish
