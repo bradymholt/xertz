@@ -29,8 +29,7 @@ jobs:
         env:
           CI: true
           NPM_API_TOKEN: ${{ secrets.NPM_API_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_ACTOR: ${{ secrets.GITHUB_ACTOR }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
       - name: npm publish        
         run: |
           npm config set //registry.npmjs.org/:_authToken=$NPM_API_TOKEN
