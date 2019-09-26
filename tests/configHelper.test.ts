@@ -1,6 +1,4 @@
 import { loadConfigFile } from "../src/configHelper";
-import * as fse from "fs-extra";
-import * as fs from "fs";
 
 jest.mock("fs-extra");
 jest.mock("fs");

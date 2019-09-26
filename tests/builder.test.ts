@@ -1,6 +1,5 @@
 import { Builder } from "../src/builder";
 import * as fs from "fs";
-import * as fse from "fs-extra";
 import * as path from "path";
 
 describe("start", () => {
@@ -24,9 +23,13 @@ describe("start", () => {
       "posts/index.html"
     ];
     for (let file of expectedFiles) {
-      expect(
-        fs.existsSync(path.join(scaffoldFolder, "_dist", file))
-      ).toBeTruthy();
+      try {
+        expect(
+          fs.existsSync(path.join(scaffoldFolder, "_dist", file))
+        ).toBeTruthy();
+      } catch (err) {
+        throw new Error(`${file} not found after running building`);
+      }
     }
   });
 
