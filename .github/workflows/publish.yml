@@ -21,6 +21,8 @@ jobs:
         run: npm install
       - name: npm version        
         run: |
+          git config user.name "Brady Holt"
+          git config user.email "brady.holt@gmail.com"          
           npm version minor --force
           git push origin master        
         env:
