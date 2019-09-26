@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1        
-      - name: Use Node.js        
+      - name: Install Node.js        
         uses: actions/setup-node@v1
         with:
           node-version: 8        
@@ -24,7 +24,7 @@ jobs:
           git config user.name "Brady Holt"
           git config user.email "brady.holt@gmail.com"          
           npm version minor --force -m "Version %s"
-          git remote add gh-origin https://${GITHUB_ACTOR}@${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
+          git remote add gh-origin https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git
           git push gh-origin HEAD:master --tags
         env:
           CI: true
