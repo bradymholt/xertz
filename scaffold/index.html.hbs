@@ -1,4 +1,4 @@
-{{#> default body_class='home' }}
+{{#> default body_class='root' }}
       <h1>Latest Posts</h1>
       {{#each (limit (filter pages "type" "post") 5) }}
       <time class="post-meta" datetime="{{ date }}">{{ dateFormat this.date "mmmm d, yyyy" }}</time>
