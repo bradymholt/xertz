@@ -1,8 +1,5 @@
----
-title: Posts
-layout: default
----
-<h1>{{title}}</h1>
+{{#> default }}
+<h1>Posts</h1>
 {{#group pages by="year"}}
 <h2>{{value}}</h2>
 <ul>
@@ -13,3 +10,5 @@ layout: default
   {{/each}}
 </ul>
 {{/group}}
+
+{{/default}}

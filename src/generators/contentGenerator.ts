@@ -266,6 +266,10 @@ export class ContentGenerator {
       pageConfig.title = pageConfig.slug;
     }
 
+    if (!pageConfig.layout) {
+      pageConfig.layout = "page";
+    }
+
     if (pageConfig.date) {
       pageConfig.year = pageConfig.date.substr(0, 4);
     }
@@ -290,9 +294,7 @@ export class ContentGenerator {
     // TODO: This is going to cause the full content to remain in memory during generation; circle back on how to improve this
     pageConfig.content_html = contentFile.html;
 
-    const applyTemplate = this.templateManager.getTemplate(
-      pageConfig.layout || "default"
-    );
+    const applyTemplate = this.templateManager.getTemplate(pageConfig.layout);
     // Apply template
     const templateData = Object.assign(
       <interfaces.ITemplateData>{},

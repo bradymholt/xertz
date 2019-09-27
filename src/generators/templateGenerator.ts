@@ -70,54 +70,19 @@ export class TemplateGenerator {
     currentConfig: IConfig,
     pages: Array<IPageConfig>
   ) {
-    const isHtmlFile = currentFileName.match(/\.html?/) != null;
-    const source = fs.readFileSync(
-      path.join(sourceDirectory, currentFileName),
-      { encoding: "utf-8" }
-    );
-
-    const parsedMatter = matter(source);
-    const pageConfig: IPageConfig = Object.assign(
-      {
-        base_path: "",
-        source: "",
-        base_source_dir: "",
-        filename: currentFileName
-      },
-      currentConfig,
-      parsedMatter.data as IFrontMatter // front-matter
-    );
-
     // Apply template
     // TODO: pages seems to be a magic object on template files; should be be standizied into a data container object?
     const templateData = Object.assign(
       <ITemplateData>{},
       this.baseTemplateData,
-      pageConfig,
+      currentConfig,
       { pages }
     );
 
-    const templatePartial = this.templateManager.initializeTemplate(
-      parsedMatter.content
+    const templateSource = this.templateManager.initializeTemplateFromFile(
+      path.join(sourceDirectory, currentFileName)
     );
-    const templatePartialOutput = templatePartial(templateData);
-
-    let layout = pageConfig.layout;
-    if (!layout && isHtmlFile) {
-      // If layout not specified and the filename has .htm(l) in it we will use the default template
-      layout = "default";
-    }
-
-    let templateLayoutOutput = "";
-    if (!layout) {
-      // No layout (e.g. xml files)
-      templateLayoutOutput = templatePartialOutput;
-    } else {
-      const templateLayout = this.templateManager.getTemplate(layout);
-      templateLayoutOutput = templateLayout(
-        Object.assign(templateData, { content_html: templatePartialOutput })
-      );
-    }
+    const templateOutput = templateSource(templateData);
 
     // Write file
     // TODO: config dist_path is ignored for template files...I think this is ok but need to make obvious.
@@ -125,9 +90,6 @@ export class TemplateGenerator {
     // Remove extension (i.e. foo.html.hbs => foo.html)
     const outFileNmae = currentFileName.replace(currentFileExtension, "");
     fse.ensureDirSync(destDirectory);
-    fs.writeFileSync(
-      path.join(destDirectory, outFileNmae),
-      templateLayoutOutput
-    );
+    fs.writeFileSync(path.join(destDirectory, outFileNmae), templateOutput);
   }
 }
