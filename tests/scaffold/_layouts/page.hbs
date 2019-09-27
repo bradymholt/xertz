@@ -1,0 +1,13 @@
+{{#> default }}
+      {{#if title }}
+      <h1>
+        {{ title }}
+      </h1>
+      {{/if}}
+      {{#if date }}
+      <p>
+        <time class="post-date" datetime="{{ date }}">{{ dateFormat this.date "mmmm d, yyyy" }}</time>
+      </p>
+      {{/if}}
+      {{{ indent content_html 6 }}}
+{{/default}}

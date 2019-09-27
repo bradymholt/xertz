@@ -2,12 +2,12 @@
 <html lang="en">
 {{> head }}
 
-<body class="{{ body_class }}">
+<body class="{{ iif body_class "body" }}">
   <div class="main-container">
     {{> header }}
     {{> sidebar }}
-    <article>
-      {{{ indent content_html 6 }}}
+    <article class="{{ layout }}">
+{{> @partial-block }}
     </article>
     {{> footer }}
     {{> google_analytics }}
