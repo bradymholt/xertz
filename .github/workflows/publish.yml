@@ -1,4 +1,4 @@
-name: Publish to Registry
+name: Publish to npm Registry
 
 on:
   pull_request:
