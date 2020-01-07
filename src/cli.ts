@@ -3,6 +3,7 @@ import * as path from "path";
 import * as fse from "fs-extra";
 import * as chokidar from "chokidar";
 import packageJson from "package-json";
+import { exec, execSync } from "child_process";
 import express = require("express");
 import currentPackageInfo from "../package.json";
 import { getCurrentDateInISOFormat } from "./dateHelper";
@@ -101,6 +102,8 @@ Commands:
       return;
     }
 
+    console.log(`INIT: Start`);
+
     const targetDirectoryPath = path.resolve(this.cwd, targetDirectoryName);
 
     if (fse.pathExistsSync(targetDirectoryPath)) {
@@ -147,7 +150,13 @@ Commands:
     scaffoldPackageContent.dependencies.xertz = latestPackageInfo.version;
     fse.writeFileSync(scaffoldFile, JSON.stringify(scaffoldPackageContent));
 
-    console.log(`INIT: Done! Start blogging with ${currentPackageInfo.name}.`);
+    // Run npm install
+    console.log(`INIT: Installing packages...`);
+    execSync(`npm install --silent`, { cwd: targetDirectoryPath });
+
+    console.log(
+      `INIT: Done! Run \`cd ${targetDirectoryName} && npx xertz serve\` and start blogging.`
+    );
     process.exit();
   }
 
@@ -221,7 +230,10 @@ This is a new post.
     sitePackageInfo.dependencies[currentPackageInfo.name] =
       latestNpmPackageInfo.version;
 
-    fse.writeFileSync(packageFile, JSON.stringify(sitePackageInfo));
+    fse.writeFileSync(packageFile, JSON.stringify(sitePackageInfo, null, 2));
+
+    execSync(`npm install --silent`, { cwd: this.cwd });
+
     console.log(`Updated to ${latestNpmPackageInfo.version}!`);
   }
 

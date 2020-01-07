@@ -2,7 +2,7 @@
 
 "use strict";
 
-const cli = require("../dist/cli.js").init(
+const cli = new (require("../dist/cli.js").default)(
   process.cwd(),
   process.argv.slice(2)
 );
