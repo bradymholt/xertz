@@ -17,7 +17,7 @@ export class ContentGenerator {
 
   readonly styles: Array<interfaces.IStyle>;
   readonly contentPageName = "index.html";
-  readonly ignorePrefixes = [".", "_"];
+  readonly ignorePrefixes = [".", "_", "node_modules"];
   readonly contentExtensionsToInclude = ["md"];
   readonly assetIgnoreExtensions = ["md", "hbs"];
   readonly templateManager: TemplateManager;

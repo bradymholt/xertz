@@ -4,9 +4,10 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import { getCurrentDateInISOFormat } from "../src/dateHelper";
 
+jest.mock("child_process");
+
 describe("init", () => {
   it("errors when no targetDirectoryName is provided", async () => {
-    jest.mock("fs-extra");
     const mockError = jest
       .spyOn(console, "error")
       .mockImplementation(((message: string) => null) as any);
@@ -83,7 +84,6 @@ describe("new", () => {
 
 describe("help", () => {
   it("prints help", async () => {
-    let foo = "";
     const logSpy = jest
       .spyOn(console, "log")
       .mockImplementation(((message: string) => null) as any);
@@ -106,7 +106,9 @@ describe("help", () => {
       const cliInstance = new cli(path.join(__dirname, "scaffold"), ["help"]);
       await cliInstance.run();
       expect(logSpy).toHaveBeenCalled();
-      expect(logSpy.mock.calls[1][1]).toContain("New version is available");
+      const nextTolastLogCall = logSpy.mock.calls[logSpy.mock.calls.length - 2];
+      expect(nextTolastLogCall[1]).toContain("New version is available");
+      //expect(logSpy.mock.calls[1][1]).toContain("New version is available");
     } finally {
       logSpy.mockReset();
     }
