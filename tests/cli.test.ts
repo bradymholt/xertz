@@ -78,8 +78,8 @@ describe("help", async () => {
       const cliInstance = new cli(path.join(__dirname, "scaffold"), ["help"]);
       await cliInstance.run();
 
-      expect(logSpy).toHaveBeenCalled();
-      expect(logSpy.mock.calls[2][0]).toContain("xertz COMMAND");
+      const lastLogCall = logSpy.mock.calls[logSpy.mock.calls.length - 1];
+      expect(lastLogCall[0]).toContain("xertz COMMAND");
     } finally {
       logSpy.mockReset();
     }
