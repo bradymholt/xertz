@@ -152,7 +152,7 @@ Commands:
 
     // Run npm install
     console.log(`INIT: Installing packages...`);
-    execSync(`npm install --silent`, { cwd: targetDirectoryPath });
+    execSync(`npm install --silent`, { cwd: targetDirectoryPath, env: { } });
 
     console.log(
       `INIT: Done! Run \`cd ${targetDirectoryName} && npx xertz serve\` and start blogging.`
