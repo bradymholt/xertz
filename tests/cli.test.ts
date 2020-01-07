@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as fse from "fs-extra";
 import { getCurrentDateInISOFormat } from "../src/dateHelper";
 
-describe("init", async () => {
+describe("init", () => {
   it("errors when no targetDirectoryName is provided", async () => {
     jest.mock("fs-extra");
     const mockError = jest
@@ -26,6 +26,10 @@ describe("init", async () => {
   });
 
   it("creates scaffold", async () => {
+    const logSpy = jest
+      .spyOn(console, "log")
+      .mockImplementation(((message: string) => null) as any);
+
     const folderName = "tmp_init";
     const initFolder = path.join(__dirname, folderName);
 
@@ -46,12 +50,17 @@ describe("init", async () => {
       }
     } finally {
       fse.removeSync(initFolder);
+      logSpy.mockReset();
     }
   });
 });
 
-describe("new", async () => {
+describe("new", () => {
   it("creates new post directory", async () => {
+    const logSpy = jest
+      .spyOn(console, "log")
+      .mockImplementation(((message: string) => null) as any);
+
     const expectedPostDirectory = `posts/${getCurrentDateInISOFormat()}-my-new-post`;
     try {
       const cliInstance = new cli(path.join(__dirname, "scaffold"), [
@@ -67,13 +76,17 @@ describe("new", async () => {
       ).toBeTruthy();
     } finally {
       fse.removeSync(path.join(__dirname, "scaffold", expectedPostDirectory));
+      logSpy.mockReset();
     }
   });
 });
 
-describe("help", async () => {
+describe("help", () => {
   it("prints help", async () => {
-    const logSpy = jest.spyOn(console, "log");
+    let foo = "";
+    const logSpy = jest
+      .spyOn(console, "log")
+      .mockImplementation(((message: string) => null) as any);
     try {
       const cliInstance = new cli(path.join(__dirname, "scaffold"), ["help"]);
       await cliInstance.run();
@@ -86,7 +99,9 @@ describe("help", async () => {
   });
 
   it("notifies when an update is available", async () => {
-    const logSpy = jest.spyOn(console, "log");
+    const logSpy = jest
+      .spyOn(console, "log")
+      .mockImplementation(((message: string) => null) as any);
     try {
       const cliInstance = new cli(path.join(__dirname, "scaffold"), ["help"]);
       await cliInstance.run();
