@@ -1,11 +1,11 @@
-import { init } from "../src/cli";
+import cli from "../src/cli";
 import * as path from "path";
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import { getCurrentDateInISOFormat } from "../src/dateHelper";
 
-describe("init", () => {
-  it("errors when no targetDirectoryName is provided", () => {
+describe("init", async () => {
+  it("errors when no targetDirectoryName is provided", async () => {
     jest.mock("fs-extra");
     const mockError = jest
       .spyOn(console, "error")
@@ -15,8 +15,8 @@ describe("init", () => {
       .mockImplementation(((code: number) => null) as any);
 
     try {
-      const cli = init(process.cwd(), ["init"]);
-      cli.run();
+      const cliInstance = new cli(process.cwd(), ["init"]);
+      await cliInstance.run();
       expect(mockError).toHaveBeenCalled();
       expect(mockExit).toHaveBeenCalledWith(1);
     } finally {
@@ -25,13 +25,13 @@ describe("init", () => {
     }
   });
 
-  it("creates scaffold", () => {
+  it("creates scaffold", async () => {
     const folderName = "tmp_init";
     const initFolder = path.join(__dirname, folderName);
 
     try {
-      const cli = init(path.join(__dirname), ["init", folderName]);
-      cli.run();
+      const cliInstance = new cli(path.join(__dirname), ["init", folderName]);
+      await cliInstance.run();
 
       const expectedFiles = [
         "favicon.ico",
@@ -50,15 +50,15 @@ describe("init", () => {
   });
 });
 
-describe("new", () => {
-  it("creates new post directory", () => {
+describe("new", async () => {
+  it("creates new post directory", async () => {
     const expectedPostDirectory = `posts/${getCurrentDateInISOFormat()}-my-new-post`;
     try {
-      const cli = init(path.join(__dirname, "scaffold"), [
+      const cliInstance = new cli(path.join(__dirname, "scaffold"), [
         "new",
         "My New Post"
       ]);
-      cli.run();
+      await cliInstance.run();
 
       expect(
         fs.existsSync(
@@ -66,7 +66,34 @@ describe("new", () => {
         )
       ).toBeTruthy();
     } finally {
-      //fse.removeSync(path.join(__dirname, "scaffold", expectedPostDirectory));
+      fse.removeSync(path.join(__dirname, "scaffold", expectedPostDirectory));
+    }
+  });
+});
+
+describe("help", async () => {
+  it("prints help", async () => {
+    const logSpy = jest.spyOn(console, "log");
+    try {
+      const cliInstance = new cli(path.join(__dirname, "scaffold"), ["help"]);
+      await cliInstance.run();
+
+      expect(logSpy).toHaveBeenCalled();
+      expect(logSpy.mock.calls[2][0]).toContain("xertz COMMAND");
+    } finally {
+      logSpy.mockReset();
+    }
+  });
+
+  it("notifies when an update is available", async () => {
+    const logSpy = jest.spyOn(console, "log");
+    try {
+      const cliInstance = new cli(path.join(__dirname, "scaffold"), ["help"]);
+      await cliInstance.run();
+      expect(logSpy).toHaveBeenCalled();
+      expect(logSpy.mock.calls[1][1]).toContain("New version is available");
+    } finally {
+      logSpy.mockReset();
     }
   });
 });

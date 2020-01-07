@@ -2,16 +2,12 @@ import { Builder } from "./builder";
 import * as path from "path";
 import * as fse from "fs-extra";
 import * as chokidar from "chokidar";
+import packageJson from "package-json";
 import express = require("express");
-import pkg from "../package.json";
+import currentPackageInfo from "../package.json";
 import { getCurrentDateInISOFormat } from "./dateHelper";
 
-export function init(cwd: string, args: Array<string>) {
-  const c = new cli(cwd, args);
-  return c;
-}
-
-class cli {
+export default class cli {
   readonly scaffoldDirectoryName = "scaffold";
   readonly scaffoldContentExampleFileName = "YYYY-MM-DD-my-first-post.md";
 
@@ -23,8 +19,27 @@ class cli {
     this.args = args;
   }
 
+  printHelp() {
+    console.log(`\
+${currentPackageInfo.name} - version ${currentPackageInfo.version}
+${currentPackageInfo.description}
+Usage:
+  xertz COMMAND
+
+Commands:
+  init
+  new 
+  build
+  serve
+  update
+  help
+`);
+  }
+
   async run() {
-    console.log(`${pkg.name} - Version: ${pkg.version}`);
+    console.log(
+      `${currentPackageInfo.name} - Version: ${currentPackageInfo.version}`
+    );
 
     this.watchSignal();
 
@@ -35,15 +50,22 @@ class cli {
         this.init(this.args[1]);
         break;
       case "new":
+        await this.checkForUpdates();
         this.newPost(this.args[1]);
         break;
       case "build":
+        await this.checkForUpdates();
         await this.build(this.args[1] || ".");
         break;
       case "serve":
+        await this.checkForUpdates();
         this.serve(this.args[1]);
         break;
+      case "update":
+        await this.update();
+        break;
       default:
+        await this.checkForUpdates();
         this.printHelp();
     }
   }
@@ -54,9 +76,28 @@ class cli {
     });
   }
 
-  init(targetDirectoryName: string) {
+  async checkForUpdates() {
+    const latestNpmPackageInfo = await packageJson(currentPackageInfo.name);
+    const sitePackageInfo = JSON.parse(
+      fse.readFileSync(path.join(this.cwd, "package.json"), "utf8")
+    );
+
+    if (
+      latestNpmPackageInfo.version !=
+      sitePackageInfo.dependencies[currentPackageInfo.name]
+    ) {
+      console.log(
+        "\x1b[33m%s",
+        `New version is available (${latestNpmPackageInfo.version}).  Run \`${currentPackageInfo.name} update\` to update.`,
+        "\x1b[0m"
+      );
+    }
+  }
+
+  async init(targetDirectoryName: string) {
     if (!targetDirectoryName) {
       this.exitWithError("ERROR: target directory is required!");
+      return;
     }
 
     const targetDirectoryPath = path.resolve(this.cwd, targetDirectoryName);
@@ -95,7 +136,17 @@ class cli {
       )
     );
 
-    console.log(`INIT: Done! Start blogging with ${pkg.name}.`);
+    // Configure package.json file
+    const scaffoldFile = path.join(scaffoldDirectory, "package.json");
+    const scaffoldPackageContent = JSON.parse(
+      fse.readFileSync(scaffoldFile, "utf8")
+    );
+    scaffoldPackageContent.name = targetDirectoryName;
+    const latestPackageInfo = await packageJson(currentPackageInfo.name);
+    scaffoldPackageContent.dependencies.xertz = latestPackageInfo.version;
+    fse.writeFileSync(scaffoldFile, JSON.stringify(scaffoldPackageContent));
+
+    console.log(`INIT: Done! Start blogging with ${currentPackageInfo.name}.`);
     process.exit();
   }
 
@@ -161,20 +212,16 @@ This is a new post.
 
     console.log(`SERVE: Listening on http://localhost:${portNumber}`);
   }
-  printHelp() {
-    console.log(`\
-${pkg.name}
-${pkg.description}
-Version: ${pkg.version}
 
-    The following options are available:
+  async update() {
+    const latestNpmPackageInfo = await packageJson(currentPackageInfo.name);
+    const packageFile = path.join(this.cwd, "package.json");
+    const sitePackageInfo = JSON.parse(fse.readFileSync(packageFile, "utf8"));
+    sitePackageInfo.dependencies[currentPackageInfo.name] =
+      latestNpmPackageInfo.version;
 
-    init
-    new
-    build
-    serve
-    help
-`);
+    fse.writeFileSync(packageFile, JSON.stringify(sitePackageInfo));
+    console.log(`Updated to ${latestNpmPackageInfo.version}!`);
   }
 
   exitWithError(errorMessage: string) {
