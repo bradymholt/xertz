@@ -23,6 +23,7 @@ export default class cli {
     console.log(`\
 ${currentPackageInfo.name} - version ${currentPackageInfo.version}
 ${currentPackageInfo.description}
+
 Usage:
   xertz COMMAND
 
