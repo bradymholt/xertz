@@ -1,7 +1,7 @@
 {
   "name": "xertz",
   "version": "0.48.0",
-  "description": "xertz",
+  "description": "A static site generator written in TypeScript",
   "author": "Brady Holt",
   "license": "MIT",
   "publishConfig": {
