@@ -22,9 +22,6 @@ export default class cli {
 
   printHelp() {
     console.log(`\
-${currentPackageInfo.name} - version ${currentPackageInfo.version}
-${currentPackageInfo.description}
-
 Usage:
   xertz COMMAND
 
@@ -49,22 +46,22 @@ Commands:
 
     switch (command) {
       case "init":
-        this.init(this.args[1]);
+        this.initCommand(this.args[1]);
         break;
       case "new":
         await this.checkForUpdates();
-        this.newPost(this.args[1]);
+        this.newCommand(this.args[1]);
         break;
       case "build":
         await this.checkForUpdates();
-        await this.build(this.args[1] || ".");
+        await this.build();
         break;
       case "serve":
         await this.checkForUpdates();
-        this.serve(this.args[1]);
+        this.serveCommand(this.args[1]);
         break;
       case "update":
-        await this.update();
+        await this.updateCommand();
         break;
       default:
         await this.checkForUpdates();
@@ -72,37 +69,14 @@ Commands:
     }
   }
 
-  watchSignal() {
-    process.on("SIGINT", function() {
-      process.exit();
-    });
-  }
-
-  async checkForUpdates() {
-    const latestNpmPackageInfo = await packageJson(currentPackageInfo.name);
-    const sitePackageInfo = JSON.parse(
-      fse.readFileSync(path.join(this.cwd, "package.json"), "utf8")
-    );
-
-    if (
-      latestNpmPackageInfo.version !=
-      sitePackageInfo.dependencies[currentPackageInfo.name]
-    ) {
-      console.log(
-        "\x1b[33m%s",
-        `New version is available (${latestNpmPackageInfo.version}).  Run \`${currentPackageInfo.name} update\` to update.`,
-        "\x1b[0m"
-      );
-    }
-  }
-
-  async init(targetDirectoryName: string) {
+  /* Commands */
+  async initCommand(targetDirectoryName: string) {
     if (!targetDirectoryName) {
       this.exitWithError("ERROR: target directory is required!");
       return;
     }
 
-    console.log(`INIT: Start`);
+    console.log(`[init] Start`);
 
     const targetDirectoryPath = path.resolve(this.cwd, targetDirectoryName);
 
@@ -140,7 +114,7 @@ Commands:
       )
     );
 
-    // Configure package.json file
+    // Configure package.json file with name of latest version of xertz specified
     const scaffoldFile = path.join(scaffoldDirectory, "package.json");
     const scaffoldPackageContent = JSON.parse(
       fse.readFileSync(scaffoldFile, "utf8")
@@ -151,16 +125,18 @@ Commands:
     fse.writeFileSync(scaffoldFile, JSON.stringify(scaffoldPackageContent));
 
     // Run npm install
-    console.log(`INIT: Installing packages...`);
-    execSync(`npm install --silent`, { cwd: targetDirectoryPath, env: { } });
+    console.log(`[init]: Installing packages...`);
+    execSync(`npm install --silent`, { cwd: targetDirectoryPath, env: {} });
 
     console.log(
-      `INIT: Done! Run \`cd ${targetDirectoryName} && npx xertz serve\` and start blogging.`
+      `[init]: Done! Run \`cd ${targetDirectoryName} && npx xertz serve\` and start blogging.`
     );
     process.exit();
   }
 
-  newPost(title: string) {
+  newCommand(title: string) {
+    console.log(`[new]: Start`);
+
     const postsPath = path.join(this.cwd, "posts");
     if (!title) {
       title = "My New Post";
@@ -186,21 +162,26 @@ This is a new post.
       }
     );
 
-    console.log(`NEW: Done!  Created ${postPath}`);
+    console.log(`[new]: Done! Created ${postPath}`);
   }
 
-  async build(sourceDirectory: string, exit = true) {
-    const builder = new Builder(path.join(this.cwd, sourceDirectory));
-    console.log(`BUILD: Start`);
+  async build(exit = true) {
+    console.log(`[build]: Start`);
+
+    const builder = new Builder(this.cwd);
     await builder.start();
-    console.log(`BUILD: Success!`);
+
+    console.log(`[build]: Success!`);
+
     if (exit) {
       process.exit();
     }
   }
 
-  async serve(preferredPortNumber: string) {
-    await this.build(".", false);
+  async serveCommand(preferredPortNumber: string) {
+    console.log(`[serve]: Start`);
+
+    await this.build(false);
 
     const distFolder = path.join(this.cwd, Builder.distDirectoryName);
 
@@ -210,8 +191,8 @@ This is a new post.
         ignored: distFolder
       })
       .on("all", (event, path) => {
-        console.log(`SERVE: Changed Detected`);
-        this.build(".", false);
+        console.log(`[serve]: Changed Detected`);
+        this.build(false);
       });
 
     const expressApp = express();
@@ -220,21 +201,51 @@ This is a new post.
     const portNumber = Number(preferredPortNumber) || 8080;
     expressApp.listen(portNumber);
 
-    console.log(`SERVE: Listening on http://localhost:${portNumber}`);
+    console.log(`[serve]: Listening on http://localhost:${portNumber}`);
   }
 
-  async update() {
+  async updateCommand() {
+    console.log(`[update]: Start`);
+
+    // Update xertz depedency to latest version in package.json
     const latestNpmPackageInfo = await packageJson(currentPackageInfo.name);
     const packageFile = path.join(this.cwd, "package.json");
     const sitePackageInfo = JSON.parse(fse.readFileSync(packageFile, "utf8"));
     sitePackageInfo.dependencies[currentPackageInfo.name] =
       latestNpmPackageInfo.version;
-
     fse.writeFileSync(packageFile, JSON.stringify(sitePackageInfo, null, 2));
 
     execSync(`npm install --silent`, { cwd: this.cwd });
 
-    console.log(`Updated to ${latestNpmPackageInfo.version}!`);
+    console.log(
+      `[update]: Successfully updated ${currentPackageInfo.name} to version ${latestNpmPackageInfo.version}.`
+    );
+  }
+
+  /* Misc */
+
+  watchSignal() {
+    process.on("SIGINT", function() {
+      process.exit();
+    });
+  }
+
+  async checkForUpdates() {
+    const latestNpmPackageInfo = await packageJson(currentPackageInfo.name);
+    const sitePackageInfo = JSON.parse(
+      fse.readFileSync(path.join(this.cwd, "package.json"), "utf8")
+    );
+
+    if (
+      latestNpmPackageInfo.version !=
+      sitePackageInfo.dependencies[currentPackageInfo.name]
+    ) {
+      console.log(
+        "\x1b[33m%s",
+        `New version is available (${latestNpmPackageInfo.version}).  Run \`${currentPackageInfo.name} update\` to update.`,
+        "\x1b[0m"
+      );
+    }
   }
 
   exitWithError(errorMessage: string) {
