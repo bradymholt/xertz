@@ -3,7 +3,7 @@ import * as path from "path";
 import * as fse from "fs-extra";
 import * as chokidar from "chokidar";
 import packageJson from "package-json";
-import { exec, execSync } from "child_process";
+import { execSync } from "child_process";
 import express = require("express");
 import currentPackageInfo from "../package.json";
 import { getCurrentDateInISOFormat } from "./dateHelper";
