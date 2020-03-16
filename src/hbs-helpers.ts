@@ -63,10 +63,14 @@ export function indent(input: string, width: number, indeentationChar: string) {
       : indeentationChar
   );
   // If newline is not preceeded by a zero width character (\u200b) then add indention
-  const indented = input.replace(/[^\u200b]\n/g, match =>
+  let indented = input.replace(/[^\u200b]\n/g, match =>
     match.replace(/\n/, `\n${intendation}`)
   );
 
+  // Remove zero width characters
+  indented = indented.replace(/\u200b\n/g, "\n");
+
+  //return indented;
   return indented;
 }
 
@@ -135,8 +139,8 @@ export function group(list: Array<any>, options: any) {
 
 /**
  * @method encodeURI
- * @param {String} uri 
+ * @param {String} uri
  */
-export function encodeURI(uri:string) {
+export function encodeURI(uri: string) {
   return encodeURIComponent(uri);
 }
