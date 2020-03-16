@@ -83,6 +83,9 @@ describe("start", () => {
 
       // Does not indent formatted code
       expect(mySecondPostContent.match(/^console\<span/m)).toBeTruthy();
+      
+      // Does not contain zero width spaces
+      expect(mySecondPostContent.match(/\u200b\n/)).toBeFalsy();
     });
 
     it("creates amp.html correctly", () => {
