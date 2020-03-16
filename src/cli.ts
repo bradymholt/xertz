@@ -242,7 +242,7 @@ This is a new post.
     ) {
       console.log(
         "\x1b[33m%s",
-        `New version is available (${latestNpmPackageInfo.version}).  Run \`${currentPackageInfo.name} update\` to update.`,
+        `New version is available (${latestNpmPackageInfo.version}).  Run \`npx ${currentPackageInfo.name} update\` to update.`,
         "\x1b[0m"
       );
     }
