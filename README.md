@@ -38,7 +38,7 @@ When you initialize a xertz site, a directory will created that looks like this:
   |-- index.html.hbs
 ```
 
-- *_layouts* - This folder contains Handlebars layouts which will be used to contruct rendered pages.
+- *_layouts* - This folder contains Handlebars layouts which will be used to contsruct rendered pages.
 - *media* - This is folder that is indented to hold images and other assets.  The folder will be emitted as is.
 - *posts* - This is folder that is indented to blog posts.
 - *styles* - CSS files can be placed here and will be be made available in the template data.
