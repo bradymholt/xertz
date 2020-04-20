@@ -64,7 +64,7 @@ A file with the `html.hbs` extension will be processed as a Handlebars template 
 
 #### Content Package Directory
 
-If subdirectory of `content/` contans contains a file called `index.md`, it will be deemed a Content Package Directory.  This means all files within the directory will be 
+If subdirectory of `posts/` contains contains a file called `index.md`, it will be deemed a Content Package Directory.  This means all files within the directory will be processed as a unit and copied to a corresponding output directory.
 
 For example, if you had a directory structure defined as:
 
