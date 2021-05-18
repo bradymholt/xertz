@@ -7,6 +7,9 @@
   "publishConfig": {
     "access": "public"
   },
+  "engines" : { 
+    "node" : ">=8.0.0 <=v12.22.1" 
+  },
   "main": "index.js",
   "bin": "bin/start.js",
   "files": [
