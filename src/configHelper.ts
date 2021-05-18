@@ -14,7 +14,7 @@ export function loadConfigFile(sourceDirectory: string) {
         path.join(sourceDirectory, "_config.yml"),
         "utf-8"
       );
-      const config = yaml.safeLoad(configFileContent) as IConfig;
+      const config = yaml.load(configFileContent) as IConfig;
       cachedConfigFiles[sourceDirectory] = config;
     } else {
       cachedConfigFiles[sourceDirectory] = {} as IConfig;
