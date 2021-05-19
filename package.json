@@ -1,14 +1,14 @@
 {
   "name": "xertz",
-  "version": "0.52.0",
+  "version": "0.53.0",
   "description": "A static site generator written in TypeScript",
   "author": "Brady Holt",
   "license": "MIT",
   "publishConfig": {
     "access": "public"
   },
-  "engines" : { 
-    "node" : ">=8.0.0 <=v12.22.1" 
+  "engines": {
+    "node": ">=8.0.0 <=v12.22.1"
   },
   "main": "index.js",
   "bin": "bin/start.js",
