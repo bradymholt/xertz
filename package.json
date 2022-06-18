@@ -1,6 +1,6 @@
 {
   "name": "xertz",
-  "version": "0.54.0",
+  "version": "0.55.0",
   "description": "A static site generator written in TypeScript",
   "author": "Brady Holt",
   "license": "MIT",
@@ -23,7 +23,7 @@
     "prepublishOnly": "tsc"
   },
   "dependencies": {
-    "@bradymholt/ampify": "^1.2.0",    
+    "@bradymholt/ampify": "^1.2.0",
     "chokidar": "^3.5.3",
     "dateformat": "^4.5.1",
     "express": "^4.18.1",
@@ -45,7 +45,7 @@
     "@types/marked": "^4.0.3",
     "@types/node": "^18.0.0",
     "@types/package-json": "^5.0.1",
-    "@types/prismjs": "^1.26.0",    
+    "@types/prismjs": "^1.26.0",
     "jest": "^28.1.1",
     "npm-check-updates": "^14.0.1",
     "ts-jest": "^28.0.5",
