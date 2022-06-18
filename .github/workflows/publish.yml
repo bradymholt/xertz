@@ -1,4 +1,4 @@
-name: Publish to npm Registry
+name: Publish
 
 on:
   pull_request:
@@ -22,7 +22,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: 12
+          node-version: 16
       - name: npm install
         run: npm install
       - name: version and publish
