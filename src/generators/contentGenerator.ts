@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as fse from "fs-extra";
 import * as path from "path";
-import marked from "marked";
+import { marked } from "marked";
 import matter from "gray-matter";
 import prismjs from "prismjs";
 import { loadConfigFile } from "../configHelper";
