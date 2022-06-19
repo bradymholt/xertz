@@ -23,7 +23,7 @@
     "prepublishOnly": "tsc"
   },
   "dependencies": {
-    "@bradymholt/ampify": "^1.2.0",
+    "@bradymholt/ampify": "^1.3.0",
     "chokidar": "^3.5.3",
     "dateformat": "^4.5.1",
     "express": "^4.18.1",
