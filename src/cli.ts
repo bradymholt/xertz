@@ -130,8 +130,7 @@ Commands:
 
     console.log(
       `[init]: Done! Run \`cd ${targetDirectoryName} && npx xertz serve\` and start blogging.`
-    );
-    process.exit();
+    );    
   }
 
   newCommand(title: string) {
