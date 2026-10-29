@@ -164,10 +164,9 @@ This is a new post.
     console.log(`[new]: Done! Created ${postPath}`);
   }
 
-  async build(exit = true) {
+  async build(exit = true, builder = new Builder(this.cwd)) {
     console.log(`[build]: Start`);
 
-    const builder = new Builder(this.cwd);
     await builder.start();
 
     console.log(`[build]: Success!`);
@@ -180,18 +179,44 @@ This is a new post.
   async serveCommand(preferredPortNumber: string) {
     console.log(`[serve]: Start`);
 
-    await this.build(false);
+    const builder = new Builder(this.cwd);
+    await this.build(false, builder);
 
     const distFolder = path.join(this.cwd, Builder.distDirectoryName);
+
+    const changedFilePaths = new Set<string>();
+    let fullBuildRequired = false;
+    let rebuildTimer: NodeJS.Timeout | undefined;
+    let rebuilding = Promise.resolve();
 
     chokidar
       .watch([path.join(this.cwd)], {
         ignoreInitial: true,
-        ignored: distFolder
+        ignored: [
+          distFolder,
+          path.join(this.cwd, "node_modules"),
+          path.join(this.cwd, ".git")
+        ]
       })
-      .on("all", (event, path) => {
-        console.log(`[serve]: Changed Detected`);
-        this.build(false);
+      .on("all", (event, changedPath) => {
+        if (event == "add" || event == "change") {
+          changedFilePaths.add(changedPath);
+        } else {
+          // Deletes and new directories can leave stale output, so start clean
+          fullBuildRequired = true;
+        }
+
+        // Editors often emit several events per save; batch them into one rebuild
+        clearTimeout(rebuildTimer);
+        rebuildTimer = setTimeout(() => {
+          const filePaths = [...changedFilePaths];
+          const fullBuild = fullBuildRequired;
+          changedFilePaths.clear();
+          fullBuildRequired = false;
+          rebuilding = rebuilding.then(() =>
+            this.rebuild(builder, filePaths, fullBuild)
+          );
+        }, 100);
       });
 
     const expressApp = express();
@@ -201,6 +226,30 @@ This is a new post.
     expressApp.listen(portNumber);
 
     console.log(`[serve]: Listening on http://localhost:${portNumber}`);
+  }
+
+  async rebuild(
+    builder: Builder,
+    changedFilePaths: string[],
+    fullBuild: boolean
+  ) {
+    console.log(`[serve]: Change detected`);
+    const startTime = Date.now();
+    try {
+      let incremental = false;
+      if (fullBuild) {
+        await builder.start();
+      } else {
+        incremental = await builder.rebuild(changedFilePaths);
+      }
+      console.log(
+        `[serve]: ${incremental ? "Incremental" : "Full"} rebuild done in ${
+          Date.now() - startTime
+        }ms`
+      );
+    } catch (err) {
+      console.error(`[serve]: Build failed - ${err}`);
+    }
   }
 
   async updateCommand() {

@@ -2,7 +2,7 @@ import * as fse from "fs-extra";
 import * as path from "path";
 
 import { IStyle } from "./interfaces";
-import { loadConfigFile } from "./configHelper";
+import { clearConfigFileCache, loadConfigFile } from "./configHelper";
 
 import { StylesGenerator } from "./generators/stylesGenerator";
 import { ContentGenerator } from "./generators/contentGenerator";
@@ -17,6 +17,8 @@ export class Builder {
   readonly layoutsDirectory: string;
   readonly stylesDirectory: string;
   readonly distDirectory: string;
+
+  private contentGenerator?: ContentGenerator;
 
   constructor(baseDirectory: string) {
     this.baseDirectory = baseDirectory;
@@ -36,6 +38,8 @@ export class Builder {
   }
 
   async start() {
+    this.contentGenerator = undefined;
+    clearConfigFileCache();
     let baseConfig = loadConfigFile(this.baseDirectory);
     if (!baseConfig) {
       throw Error(`Config file not found in ${this.baseDirectory}.`);
@@ -59,5 +63,29 @@ export class Builder {
       this.distDirectory
     );
     await contentGenerator.generateAll();
+    this.contentGenerator = contentGenerator;
+  }
+
+  /**
+   * Returns true if the rebuild was incremental
+   */
+  async rebuild(changedFilePaths: string[]) {
+    const requiresFullBuild = changedFilePaths.some(
+      f =>
+        f.startsWith(this.layoutsDirectory + path.sep) ||
+        f.startsWith(this.stylesDirectory + path.sep) ||
+        path.basename(f) == "_config.yml"
+    );
+
+    if (
+      !requiresFullBuild &&
+      this.contentGenerator &&
+      (await this.contentGenerator.regenerate(changedFilePaths))
+    ) {
+      return true;
+    }
+
+    await this.start();
+    return false;
   }
 }
