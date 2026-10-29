@@ -32,6 +32,16 @@ export class ContentGenerator {
   readonly templateGenerator: TemplateGenerator;
   readonly ampGenerator: AmpGenerator;
 
+  private pages: Array<interfaces.IPageConfig> = [];
+  private readonly generatedDirectories = new Map<
+    string,
+    {
+      config: interfaces.IConfig;
+      destDirectory: string;
+      pageConfig: interfaces.IPageConfig;
+    }
+  >();
+
   constructor(
     baseConfig: interfaces.IConfig,
     styles: Array<interfaces.IStyle>,
@@ -64,7 +74,7 @@ export class ContentGenerator {
   }
 
   public async generateAll() {
-    await this.generate(
+    this.pages = await this.generate(
       this.baseConfig,
       this.baseSourceDirectory,
       this.baseDestDirectory
@@ -74,7 +84,8 @@ export class ContentGenerator {
   public async generate(
     config: interfaces.IConfig,
     sourceDirectory: string,
-    destDirectory: string
+    destDirectory: string,
+    recursive = true
   ) {
     const originalDestDirectory = destDirectory;
 
@@ -118,6 +129,12 @@ export class ContentGenerator {
       }
     }
 
+    this.generatedDirectories.set(sourceDirectory, {
+      config,
+      destDirectory: originalDestDirectory,
+      pageConfig: currentDirectoryPageConfig
+    });
+
     fse.ensureDirSync(destDirectory);
 
     const sourceDirectoryFileNames = fs.readdirSync(sourceDirectory);
@@ -138,6 +155,10 @@ export class ContentGenerator {
       currentDirectoryPageConfig,
       isContentPackageDirectory
     );
+
+    if (!recursive) {
+      return pages;
+    }
 
     // Traverse subdirectories if this is not a content package directory
     if (!isContentPackageDirectory) {
@@ -175,6 +196,83 @@ export class ContentGenerator {
     }
 
     return pages;
+  }
+
+  /**
+   * Returns false when the changes can't be applied incrementally and a full build is needed
+   */
+  public async regenerate(changedFilePaths: string[]) {
+    const directoriesToRegenerate = new Set<string>();
+    for (let changedFilePath of changedFilePaths) {
+      if (this.isIgnoredPath(changedFilePath)) {
+        continue;
+      }
+
+      const sourceDirectory = path.dirname(changedFilePath);
+      let generatedDirectory = sourceDirectory;
+      while (
+        !this.generatedDirectories.has(generatedDirectory) &&
+        generatedDirectory != path.dirname(generatedDirectory)
+      ) {
+        generatedDirectory = path.dirname(generatedDirectory);
+      }
+
+      const isInContentPackageDirectory = fse.existsSync(
+        path.join(generatedDirectory, "index.md")
+      );
+      if (
+        !this.generatedDirectories.has(generatedDirectory) ||
+        (generatedDirectory != sourceDirectory && !isInContentPackageDirectory)
+      ) {
+        // A new directory that was not part of the last build
+        return false;
+      }
+
+      directoriesToRegenerate.add(generatedDirectory);
+    }
+
+    const templateDirectories = new Set<string>();
+    for (let sourceDirectory of directoriesToRegenerate) {
+      const { config, destDirectory } =
+        this.generatedDirectories.get(sourceDirectory)!;
+      const pages = await this.generate(
+        config,
+        sourceDirectory,
+        destDirectory,
+        false
+      );
+      this.pages = this.pages
+        .filter(p => path.dirname(p.source) != sourceDirectory)
+        .concat(pages);
+
+      for (
+        let directory = sourceDirectory;
+        this.generatedDirectories.has(directory);
+        directory = path.dirname(directory)
+      ) {
+        templateDirectories.add(directory);
+      }
+    }
+
+    for (let sourceDirectory of templateDirectories) {
+      const { destDirectory, pageConfig } =
+        this.generatedDirectories.get(sourceDirectory)!;
+      this.templateGenerator.generate(
+        sourceDirectory,
+        destDirectory,
+        pageConfig,
+        this.pages.filter(p => p.source.startsWith(sourceDirectory + path.sep))
+      );
+    }
+
+    return true;
+  }
+
+  private isIgnoredPath(filePath: string) {
+    return path
+      .relative(this.baseSourceDirectory, filePath)
+      .split(path.sep)
+      .some(segment => this.ignorePrefixes.some(i => segment.startsWith(i)));
   }
 
   private processAssetFiles(

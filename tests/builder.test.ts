@@ -1,5 +1,7 @@
 import { Builder } from "../src/builder";
 import * as fs from "fs";
+import * as fse from "fs-extra";
+import * as os from "os";
 import * as path from "path";
 
 describe("start", () => {
@@ -138,5 +140,47 @@ describe("start", () => {
         )
       ).toBeTruthy();
     });
+  });
+});
+
+describe("rebuild", () => {
+  const siteFolder = path.join(os.tmpdir(), "xertz_rebuild_test");
+  const postFile = path.join(siteFolder, "posts/my-second-post/index.md");
+  let builder: Builder;
+
+  beforeAll(async () => {
+    fse.copySync(path.join(__dirname, "./scaffold"), siteFolder, {
+      filter: src => !src.includes("_dist")
+    });
+    builder = new Builder(siteFolder);
+    await builder.start();
+  });
+
+  afterAll(() => {
+    fse.removeSync(siteFolder);
+  });
+
+  it("re-renders a changed post and the pages that list it", async () => {
+    fs.writeFileSync(
+      postFile,
+      fs.readFileSync(postFile, "utf-8").replace("My Second Post", "Renamed")
+    );
+
+    expect(await builder.rebuild([postFile])).toBe(true);
+    expect(
+      fs.readFileSync(
+        path.join(siteFolder, "_dist/my-second-post/index.html"),
+        "utf-8"
+      )
+    ).toContain("Renamed");
+    expect(
+      fs.readFileSync(path.join(siteFolder, "_dist/posts/index.html"), "utf-8")
+    ).toContain(`<a href="/my-second-post/">Renamed</a>`);
+  });
+
+  it("does a full build when a layout changes", async () => {
+    expect(
+      await builder.rebuild([path.join(siteFolder, "_layouts/page.hbs")])
+    ).toBe(false);
   });
 });

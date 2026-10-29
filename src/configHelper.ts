@@ -4,7 +4,11 @@ import * as fse from "fs-extra";
 import * as yaml from "js-yaml";
 import { IConfig } from "./interfaces";
 
-const cachedConfigFiles: { [sourceDirectory: string]: IConfig } = {};
+let cachedConfigFiles: { [sourceDirectory: string]: IConfig } = {};
+
+export function clearConfigFileCache() {
+  cachedConfigFiles = {};
+}
 
 export function loadConfigFile(sourceDirectory: string) {
   if (!cachedConfigFiles[sourceDirectory]) {
