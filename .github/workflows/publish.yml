@@ -2,11 +2,14 @@ name: Publish
 
 on:  
   workflow_dispatch:
+permissions:
+  contents: write
+  id-token: write
 jobs:
   publish:
     runs-on: ubuntu-latest    
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v4
         with:
           ref: refs/heads/master
       - name: Setup git repo
@@ -17,18 +20,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 24
+      # Trusted publishing needs npm 11.5.1+
+      - name: Update npm
+        run: npm install -g npm@^11.5.1
       - name: npm install
         run: npm install
       - name: version and publish
         run: |
           npm version minor --force -m "Version %s [build-skip]"
-          npm set //registry.npmjs.org/:_authToken $NODE_AUTH_TOKEN
           npm publish
         env:
           CI: true
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
       - name: Push release commit and tag to GitHub
         run: git push gh-origin HEAD:master --tags

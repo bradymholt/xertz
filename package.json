@@ -4,6 +4,10 @@
   "description": "A static site generator written in TypeScript",
   "author": "Brady Holt",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bradymholt/xertz.git"
+  },
   "publishConfig": {
     "access": "public"
   },
